@@ -23,6 +23,10 @@
 (defvar my-search-prompt--source-point nil
   "Point in the source buffer to yank words forward from.")
 
+(defvar my-search-prompt--word-start-point nil
+  "Point in the source buffer where the first `C-w' word pull started.
+Used to move cursor to the start of the word before search/replace begins.")
+
 (defvar my-search-prompt--first-pull-done nil
   "Non-nil once the first `C-w' press (compound-word grab) has
 happened for the current prompt invocation.")
@@ -56,7 +60,8 @@ newline, since these prompts take a single-line pattern."
                                    (point))))
                 (setq text (buffer-substring-no-properties start end))
                 (setq my-search-prompt--source-point end)
-                (setq my-search-prompt--first-pull-done t))
+                (setq my-search-prompt--first-pull-done t)
+                (setq my-search-prompt--word-start-point start))
             ;; Subsequent presses: extend forward word-by-word/char-by-char.
             (let ((start (point))
                   (line-end (line-end-position)))
@@ -141,6 +146,23 @@ argument."
           (my-search-prompt--prefill (unless my-search-prompt-disable-prefill
                                        (my-search-prompt-region-or-nil)))
           (my-search-prompt--active t))
+     (setq my-search-prompt--word-start-point nil)
      ,@body))
+
+;; When `C-w' was used in a query-replace prompt to pull a word at
+;; point, move point to the start of that word before `perform-replace'
+;; begins its forward search.  This ensures the current occurrence is
+;; not skipped when the cursor was in the middle of the word.
+(advice-add 'perform-replace :before
+            (lambda (&rest _)
+              (when my-search-prompt--word-start-point
+                (let ((pos my-search-prompt--word-start-point)
+                      (buf (current-buffer)))
+                  (setq my-search-prompt--word-start-point nil)
+                  (when (and (numberp pos) (<= pos (point-max)))
+                    (goto-char pos)
+                    (let ((win (get-buffer-window buf t)))
+                      (when win
+                        (set-window-point win pos))))))))
 
 (provide 'search-prompt-word-at-point)
