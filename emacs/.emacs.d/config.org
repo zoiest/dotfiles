@@ -732,14 +732,13 @@ unaffected everywhere else.
                  (apply fn args)))))
 
 ;; `M-%' (query-replace) and `C-M-%' (query-replace-regexp) both read
-;; their "from" argument through `query-replace-read-from'. Give that
-;; prompt the same isearch-style region pre-fill and `C-w'
-;; word-at-point yanking as `my-git-grep'/`rg-read-pattern' (see
-;; search-prompt-word-at-point.el).
+;; their "from" argument through `query-replace-read-from'. Enable `C-w'
+;; word-at-point yanking in the prompt without pre-filling the selection.
 (advice-add 'query-replace-read-from :around
             (lambda (fn &rest args)
-              (my-search-prompt-with-word-at-point
-               (apply fn args))))
+              (let ((my-search-prompt-disable-prefill t))
+                (my-search-prompt-with-word-at-point
+                 (apply fn args)))))
 #+end_src
 
 * Markdown

@@ -77,6 +77,10 @@ newline, since these prompts take a single-line pattern."
   "Non-nil while a `my-search-prompt-with-word-at-point' form is reading
 from the minibuffer, so the setup hook knows to bind `C-w'.")
 
+(defvar my-search-prompt-disable-prefill nil
+  "When non-nil, `my-search-prompt-with-word-at-point' will not pre-fill
+the prompt with the active region text.")
+
 (defvar my-search-prompt--prefill nil
   "Text to pre-fill the minibuffer with (selected, so typing replaces
 it), or nil. Set from the active region by
@@ -134,7 +138,8 @@ argument."
   `(let* ((my-search-prompt--source-buffer (current-buffer))
           (my-search-prompt--source-point (point))
           (my-search-prompt--first-pull-done nil)
-          (my-search-prompt--prefill (my-search-prompt-region-or-nil))
+          (my-search-prompt--prefill (unless my-search-prompt-disable-prefill
+                                       (my-search-prompt-region-or-nil)))
           (my-search-prompt--active t))
      ,@body))
 
