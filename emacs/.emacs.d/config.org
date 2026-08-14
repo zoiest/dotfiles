@@ -2,6 +2,49 @@
 #+AUTHOR: Zoïe Street
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 
+* Terminal Input Safety
+
+Guards against mouse-wheel escape sequences being executed as commands
+during the ~1s startup window (e.g. scrolling over a =dired= buffer as
+it loads would run =Z= / =dired-do-compress=).
+
+Mouse wheel events arrive as =ESC [ M <button> <32+col> <32+row>= (X10)
+or =ESC [ < ...M= (SGR). If =input-decode-map= has no entry for them —
+which is the case before =xterm-mouse-mode= is on — Emacs falls back to
+reading =ESC= as Meta and =[= as a literal key, leaving the trailing
+coordinate bytes to execute as ordinary commands. Column 58 encodes as
+byte 90, which is =Z=. Hence the surprise compress prompt.
+
+Two mitigations:
+
+1. Turn on =xterm-mouse-mode= *first*, before packages load, so wheel
+   sequences are consumed as mouse events for as much of startup as
+   possible.
+2. Drop anything still sitting in the input queue once init finishes.
+   =kkp= also does a synchronous terminal query at startup
+   (=kkp-terminal-query-timeout=, 2s) that reads raw events, so input
+   can land slightly after =emacs-startup-hook=; the idle timer covers
+   that tail.
+
+Note: binding =M-[= to =ignore= looks like a tempting extra safety net,
+but it breaks arrow-key decoding — =M-[= is the CSI prefix, and giving it
+a complete binding stops Emacs from reading ahead to translate
+=ESC [ A/B/C/D=. Verified: arrows moved -3 lines instead of +5. Don't.
+
+#+begin_src emacs-lisp
+;; 1. Decode mouse sequences as early as possible.
+(xterm-mouse-mode 1)
+
+;; 2. Discard input that arrived while Emacs was still initializing, so
+;; queued wheel/escape bytes can't be replayed as commands.
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (discard-input)
+            ;; Catch bytes that land just after startup (kkp's terminal
+            ;; query, slow pty/multiplexer flushes).
+            (run-with-idle-timer 0.4 nil #'discard-input)))
+#+end_src
+
 * Package Management
 
 #+begin_src emacs-lisp
@@ -95,7 +138,6 @@ Local LSP server directory managed by Emacs. Install servers with:
 * General Settings
 
 #+begin_src emacs-lisp
-(xterm-mouse-mode)
 (global-auto-revert-mode 1)
 (delete-selection-mode 1)
 
