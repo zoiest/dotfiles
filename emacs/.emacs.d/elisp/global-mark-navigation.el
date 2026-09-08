@@ -14,24 +14,53 @@
 (defvar my-nav--last-buffer nil "Last known buffer for detecting buffer switches.")
 (defvar my-nav-distance-threshold 20 "Minimum line distance to count as a significant jump.")
 
+;; --- Results buffers are never recorded in the history ---
+
+;; Clicking or moving around in *compilation*, *xref*, *grep*, or *rg*
+;; should not leave entries in the navigation history: those positions
+;; are not places you want `my-nav-go-back' to return to. Matching on
+;; major mode (rather than buffer name) also covers renamed buffers such
+;; as *compilation*<2>, and `grep-mode' / `rg-mode', which both derive
+;; from `compilation-mode'.
+;;
+;; Only the marker's own buffer is checked, so moving *into* a results
+;; buffer still records where you came from. That is what makes the
+;; quickfix round trip work: edit foo.c, click into *compilation* (pushes
+;; foo.c), select a match to land in bar.c, then `my-nav-go-back' returns
+;; to foo.c rather than to the *compilation* buffer.
+(defvar my-nav-excluded-modes '(compilation-mode xref--xref-buffer-mode)
+  "Major modes whose positions are never pushed onto `my-nav-history'.")
+
+(defun my-nav--excluded-buffer-p (buffer)
+  "Non-nil if BUFFER's positions should be kept out of the history."
+  (and (buffer-live-p buffer)
+       (with-current-buffer buffer
+         (or (apply #'derived-mode-p my-nav-excluded-modes)
+             ;; Shared list from results-buffer-origin.el, when loaded.
+             (and (boundp 'my-results-buffer-names)
+                  (member (buffer-name buffer) my-results-buffer-names)
+                  t)))))
+
 (defun my-nav--push-marker (marker)
   "Push MARKER onto navigation history, truncating forward history."
-  ;; Don't push duplicates
-  (unless (and (> (length my-nav-history) 0)
-               (>= my-nav-index 0)
-               (let ((top (nth my-nav-index my-nav-history)))
-                 (and (marker-buffer top)
-                      (eq (marker-buffer top) (marker-buffer marker))
-                      (= (marker-position top) (marker-position marker)))))
-    ;; Truncate forward history
-    (when (< my-nav-index (1- (length my-nav-history)))
-      (setq my-nav-history (seq-take my-nav-history (1+ my-nav-index))))
-    ;; Push new marker
-    (setq my-nav-history (append my-nav-history (list marker)))
-    ;; Trim if too long
-    (when (> (length my-nav-history) my-nav-max)
-      (setq my-nav-history (seq-drop my-nav-history 1)))
-    (setq my-nav-index (1- (length my-nav-history)))))
+  ;; Skip results buffers (*compilation*, *xref*, *grep*, *rg*).
+  (unless (my-nav--excluded-buffer-p (marker-buffer marker))
+    ;; Don't push duplicates
+    (unless (and (> (length my-nav-history) 0)
+                 (>= my-nav-index 0)
+                 (let ((top (nth my-nav-index my-nav-history)))
+                   (and (marker-buffer top)
+                        (eq (marker-buffer top) (marker-buffer marker))
+                        (= (marker-position top) (marker-position marker)))))
+      ;; Truncate forward history
+      (when (< my-nav-index (1- (length my-nav-history)))
+        (setq my-nav-history (seq-take my-nav-history (1+ my-nav-index))))
+      ;; Push new marker
+      (setq my-nav-history (append my-nav-history (list marker)))
+      ;; Trim if too long
+      (when (> (length my-nav-history) my-nav-max)
+        (setq my-nav-history (seq-drop my-nav-history 1)))
+      (setq my-nav-index (1- (length my-nav-history))))))
 
 (defun my-nav-push ()
   "Push current position onto navigation history."
