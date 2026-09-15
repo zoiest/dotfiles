@@ -1,3 +1,5 @@
+;;; terminal-key-mappings.el --- Extended xterm modifier key sequences -*- lexical-binding: t; -*-
+
 ;; copied it from here https://emacs.stackexchange.com/a/13957
 ;; xterm with the resource ?.VT100.modifyOtherKeys: 1
 ;; GNU Emacs >=24.4 sets xterm in this mode and define

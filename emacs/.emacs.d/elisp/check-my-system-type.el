@@ -1,3 +1,5 @@
+;;; check-my-system-type.el --- System type predicates -*- lexical-binding: t; -*-
+
 ;; Copied from https://github.com/novoid/dot-emacs/blob/master/config.org
 
 ;; Get current system's name

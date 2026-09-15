@@ -1,3 +1,5 @@
+;;; some-configurations.el --- Assorted keybindings and tweaks -*- lexical-binding: t; -*-
+
 ;;; Faster move around
 (global-set-key (kbd "C-x <right>") 'windmove-right)
 (global-set-key (kbd "C-x <left>") 'windmove-left)

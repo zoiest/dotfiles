@@ -1,3 +1,5 @@
+;;; display-buffer-configurations.el --- Display buffer rules -*- lexical-binding: t; -*-
+
 ;; display buffer related configurations
 
 (defun toggle-window-dedicated ()
@@ -5,7 +7,7 @@
 buffer in current window."
   (interactive)
   (message
-   (if (let (window (get-buffer-window (current-buffer)))
+   (if (let ((window (get-buffer-window (current-buffer))))
          ; set-window-dedicated-p returns FLAG that was passed as
          ; second argument, thus can be used as COND for if:
          (set-window-dedicated-p window (not (window-dedicated-p window))))

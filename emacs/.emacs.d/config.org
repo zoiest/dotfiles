@@ -32,6 +32,8 @@ a complete binding stops Emacs from reading ahead to translate
 =ESC [ A/B/C/D=. Verified: arrows moved -3 lines instead of +5. Don't.
 
 #+begin_src emacs-lisp
+;;; config.el --- tangled from config.org -*- lexical-binding: t; -*-
+
 ;; 1. Decode mouse sequences as early as possible.
 (xterm-mouse-mode 1)
 

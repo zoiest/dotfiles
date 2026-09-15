@@ -1,4 +1,4 @@
-;;; global-mark-navigation.el --- VS Code-like go back/forward navigation
+;;; global-mark-navigation.el --- VS Code-like go back/forward navigation -*- lexical-binding: t; -*-
 
 ;; A linear navigation history with a cursor index.
 ;; - "Go back" moves earlier in history

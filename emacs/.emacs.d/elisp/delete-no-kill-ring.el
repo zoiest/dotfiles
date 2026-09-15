@@ -1,3 +1,5 @@
+;;; delete-no-kill-ring.el --- Delete without touching the kill ring -*- lexical-binding: t; -*-
+
 ;;; Copied from http://xahlee.info/emacs/emacs/emacs_kill-ring.html
 ;;; Modify behaviors of delete
 (defun my-delete-word (arg)
