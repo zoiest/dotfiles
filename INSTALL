@@ -14,10 +14,10 @@ if [ "$PLATFORM" = Linux ]; then
    #     sudo apt-get install -y nodejs
 
    mkdir --parent ~/.fonts
-   for font in JetBrainsMono.tar.xz ; do
+   for font in JetBrainsMono.tar.xz Go-Mono.tar.xz ; do
        if [ ! -f ~/.fonts/"${font}" ]; then
            curl -L -o ~/.fonts/"${font}" \
-               https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/"${font}"
+               https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/"${font}"
            tar xvf ~/.fonts/"${font}" -C ~/.fonts/
            sudo fc-cache -fv
        fi
