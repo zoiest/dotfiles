@@ -15,10 +15,6 @@ buffer in current window."
      "%s is up for grabs.")
    (current-buffer)))
 
-(global-set-key (kbd "C-c d") 'toggle-window-dedicated)
-
-(setq mode-line-misc-info (cons '(:eval (if (window-dedicated-p) "DEDICATED" "NOT-DEDICATED")) mode-line-misc-info))
-
 ;; decide how different kind of buffers get popped up
 (add-to-list 'display-buffer-alist
              '("\\*e?shell\\*"
