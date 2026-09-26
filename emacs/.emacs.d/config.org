@@ -812,6 +812,61 @@ unaffected everywhere else.
               ("C-c C-o" . markdown-follow-thing-at-point)))
 #+end_src
 
+* Org Mode
+
+#+begin_src emacs-lisp
+(with-eval-after-load 'org
+  ;; Open HTML exports and links using the default browser instead of an Emacs text buffer
+  (setf (alist-get "\\.x?html?\\'" org-file-apps nil nil #'equal)
+        (lambda (file _link) (browse-url-of-file file)))
+  ;; Open PDF files with the system viewer
+  (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal)
+        (lambda (file _link)
+          (call-process (if (eq system-type 'darwin) "open" "xdg-open") nil 0 nil file))))
+#+end_src
+
+* Org Roam
+
+Networked note-taking with [[https://www.orgroam.com/][Org-roam]]. Notes are stored in =~org-roam=
+and indexed via SQLite.
+
+Key bindings:
+- =C-c n f= :: Find or create a node (=org-roam-node-find=)
+- =C-c n i= :: Insert a link to a node at point (=org-roam-node-insert=)
+- =C-c n l= :: Toggle the Org-roam backlinks buffer (=org-roam-buffer-toggle=)
+- =C-c n c= :: Capture a note without visiting it (=org-roam-capture=)
+- =C-c n g= :: Graph visualization (=org-roam-graph=)
+- =C-c n j= :: Capture today's daily note (=org-roam-dailies-capture-today=)
+- =C-c n d= :: Org-roam dailies keymap prefix (=org-roam-dailies-map=):
+  - =C-c n d d= / =C-c n d n= :: Go to / capture today's note
+  - =C-c n d y= / =C-c n d t= :: Go to yesterday / tomorrow
+  - =C-c n d c= / =C-c n d v= :: Go to / capture specific date
+
+#+begin_src emacs-lisp
+(use-package org-roam
+  :ensure t
+  :defer 3
+  :custom
+  (org-roam-directory (file-truename "~/org-roam"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ("C-c n j" . org-roam-dailies-capture-today))
+  :bind-keymap
+  ("C-c n d" . org-roam-dailies-map)
+  :config
+  (require 'org-roam-dailies)
+  (require 'org-roam-export)
+  (setq org-export-with-broken-links t)
+  (unless (file-directory-p org-roam-directory)
+    (make-directory org-roam-directory t))
+  (setq org-roam-node-display-template
+        (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (org-roam-db-autosync-mode))
+#+end_src
+
 * Appearance
 
 #+begin_src emacs-lisp
