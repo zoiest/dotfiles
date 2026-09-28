@@ -121,6 +121,20 @@ On ThinkPad models (such as **P14s / T14 Gen 1 AMD** with Ryzen 4000 series), hi
   fi
   ```
 
+#### Issue D: Hard freeze on subsequent hibernations (AMD GPU `drm/ttm` list corruption)
+* **Symptom:** Hibernation works once and resumes cleanly, but a subsequent hibernation attempt within the same boot hangs indefinitely at `PM: hibernation: hibernation entry` without syncing disks or powering off. Between the resume and freeze, `journalctl` shows kernel warnings:
+  ```text
+  list_del corruption. prev->next should be ..., but was ...
+  WARNING: lib/list_debug.c: ... at __list_del_entry_valid_or_report ...
+  Call Trace: ttm_resource_move_to_lru_tail -> ttm_bo_move_to_lru_tail -> amdgpu_cs_submit
+  ```
+* **Cause:** Upstream Linux kernel regression in the TTM memory subsystem ([Freedesktop AMD DRM Issue #5387](https://gitlab.freedesktop.org/drm/amd/-/issues/5387)). When GPU buffers are swapped out during hibernation, they become unevictable, but TTM leaves dangling `bulk_move` cursors. When applications (like GNOME Shell) submit graphics commands after resuming, the dangling cursor corrupts the driver's internal LRU list. When entering hibernation again, `amdgpu` deadlocks while attempting to freeze and evict VRAM buffers using the corrupted list.
+* **Fix:** Upgrade to an updated kernel containing the patch (*"drm/ttm: don't leave bulk_move cursor dangling for unevictable resources"*):
+  ```bash
+  sudo apt update && sudo apt upgrade linux-image-generic-hwe-26.04 linux-headers-generic-hwe-26.04
+  ```
+  *(Workaround if stuck on an affected kernel: reboot between hibernation cycles if `list_del corruption` appears in `dmesg`).*
+
 ---
 
 ### 3. Testing and Verification
