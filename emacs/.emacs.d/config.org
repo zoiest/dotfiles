@@ -86,6 +86,11 @@ Use stapelberg's trick: run GC when Emacs loses focus, so pauses are invisible.
 
 #+begin_src emacs-lisp
 (add-to-list 'exec-path (expand-file-name "~/.local/bin"))
+(add-to-list 'exec-path (expand-file-name "~/go/bin"))
+(add-to-list 'exec-path (expand-file-name "~/.local/go/bin"))
+(setenv "PATH" (concat (expand-file-name "~/go/bin") ":"
+                       (expand-file-name "~/.local/go/bin") ":"
+                       (getenv "PATH")))
 #+end_src
 
 Local LSP server directory managed by Emacs. Install servers with:
@@ -558,10 +563,11 @@ command was invoked from, one word at a time."
 (with-eval-after-load 'tramp
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
 
-(defun my-eglot-organize-imports () (interactive)
-       (eglot-code-actions nil nil "source.organizeImports" t))
-
-(add-hook 'before-save-hook 'my-eglot-organize-imports nil t)
+(defun my-eglot-organize-imports ()
+  "Organize imports using Eglot without failing if there are none."
+  (interactive)
+  (ignore-errors
+    (eglot-code-actions nil nil "source.organizeImports" t)))
 #+end_src
 
 ** Go
@@ -570,11 +576,21 @@ command was invoked from, one word at a time."
 (use-package go-mode
   :ensure t
   :defer t
+  :init
+  ;; Use goimports instead of the default gofmt
+  (setq gofmt-command "goimports")
   :hook ((go-mode . (lambda ()
                       (setq tab-width 4)
                       (setq indent-tabs-mode t)
-                      (add-hook 'before-save-hook #'eglot-format-buffer nil t)
-                      (add-hook 'before-save-hook #'my-eglot-organize-imports nil t)))))
+                      (add-hook 'before-save-hook
+                                (lambda ()
+                                  (if (and (fboundp 'eglot-managed-p) (eglot-managed-p))
+                                      (progn
+                                        (my-eglot-organize-imports)
+                                        (eglot-format-buffer))
+                                    (when (fboundp 'gofmt-before-save)
+                                      (gofmt-before-save))))
+                                nil t)))))
 #+end_src
 
 ** Robot Framework
