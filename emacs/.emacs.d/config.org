@@ -573,24 +573,27 @@ command was invoked from, one word at a time."
 ** Go
 
 #+begin_src emacs-lisp
+(defun my-go-before-save ()
+  "Run goimports followed by gofmt before saving."
+  (interactive)
+  (when (executable-find "goimports")
+    (let ((gofmt-command "goimports")
+          (gofmt-show-errors nil))
+      (ignore-errors (gofmt))))
+  (let ((gofmt-command "gofmt"))
+    (gofmt)))
+
 (use-package go-mode
   :ensure t
   :defer t
-  :init
-  ;; Use goimports instead of the default gofmt
-  (setq gofmt-command "goimports")
   :hook ((go-mode . (lambda ()
                       (setq tab-width 4)
                       (setq indent-tabs-mode t)
-                      (add-hook 'before-save-hook
-                                (lambda ()
-                                  (if (and (fboundp 'eglot-managed-p) (eglot-managed-p))
-                                      (progn
-                                        (my-eglot-organize-imports)
-                                        (eglot-format-buffer))
-                                    (when (fboundp 'gofmt-before-save)
-                                      (gofmt-before-save))))
-                                nil t)))))
+                      (add-hook 'before-save-hook #'my-go-before-save nil t)))
+         (go-ts-mode . (lambda ()
+                         (setq tab-width 4)
+                         (setq indent-tabs-mode t)
+                         (add-hook 'before-save-hook #'my-go-before-save nil t)))))
 #+end_src
 
 ** Robot Framework
