@@ -168,6 +168,10 @@ Local LSP server directory managed by Emacs. Install servers with:
 (global-set-key (kbd "C-v") #'my-scroll-half-page-down)
 (global-set-key (kbd "M-v") #'my-scroll-half-page-up)
 
+;; Map C-x c to C-x C-c so fast typing exits cleanly without "C-x c is undefined"
+(define-key key-translation-map (kbd "C-x c") (kbd "C-x C-c"))
+(global-set-key (kbd "C-x c") #'save-buffers-kill-terminal)
+
 ;; Make bracketed paste (Cmd+v in terminal) respect delete-selection-mode
 (advice-add 'xterm-paste :around
             (lambda (orig-fn &rest args)
