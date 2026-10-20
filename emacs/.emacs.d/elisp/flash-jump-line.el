@@ -25,7 +25,7 @@
   "Briefly highlight the line jumped to."
   :group 'convenience)
 
-(defcustom my-flash-line-duration 0.35
+(defcustom my-flash-line-duration 0.25
   "Seconds the destination line stays highlighted."
   :type 'number
   :group 'my-flash-line)
@@ -86,6 +86,21 @@ highlight from the previous one."
     (my-flash-line)))
 
 (add-hook 'isearch-mode-end-hook #'my-flash-line--after-isearch)
+
+(defun my-flash-line--after-isearch-repeat (&rest _args)
+  "Flash the new match after C-s / C-r steps to another one.
+`isearch-repeat' is the shared helper behind `isearch-repeat-forward'
+and `isearch-repeat-backward', so advising it covers both directions
+and wrap-around.  Nothing is flashed on a failed search, where point
+has not moved.
+
+The flash does not hide the match itself: isearch's own overlay has
+priority 1001 against this overlay's 100, so the matched text keeps
+its highlight on top of the flashed line."
+  (when isearch-success
+    (my-flash-line)))
+
+(advice-add 'isearch-repeat :after #'my-flash-line--after-isearch-repeat)
 
 ;; --- xref ---
 
