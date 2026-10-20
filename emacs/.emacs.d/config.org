@@ -948,11 +948,11 @@ Syncs the Org-roam database first so that all `id:' links resolve properly."
 (setq custom-safe-themes t)
 
 (defun my-setup-gui-font (&optional frame)
-  "Configure Iosevka Nerd Font Mono for GUI frames if GUI is active."
+  "Configure Iosevka Nerd Font for GUI frames if GUI is active."
   (when (display-graphic-p frame)
     (let ((font-height (if (my-system-type-is-darwin) 140 120)))
       (set-face-attribute 'default frame
-                          :family "Iosevka Nerd Font Mono"
+                          :family "Iosevka Nerd Font"
                           :height font-height
                           :weight 'regular))))
 
@@ -965,14 +965,41 @@ Syncs the Org-roam database first so that all `id:' links resolve properly."
 ;; Ensure default-frame-alist has the font set for new GUI frames
 (add-to-list 'default-frame-alist
              (cons 'font (if (my-system-type-is-darwin)
-                             "Iosevka Nerd Font Mono-14"
-                           "Iosevka Nerd Font Mono-12")))
+                             "Iosevka Nerd Font-14"
+                           "Iosevka Nerd Font-12")))
 
 (cond ((my-system-type-is-darwin)
        (custom-set-faces
-        '(default ((t (:family "Iosevka Nerd Font Mono" :slant normal :weight regular :height 140 :width normal))))))
+        '(default ((t (:family "Iosevka Nerd Font" :slant normal :weight regular :height 140 :width normal))))))
       (t
        (custom-set-faces
-        '(default ((t (:family "Iosevka Nerd Font Mono" :slant normal :weight regular :height 120 :width normal)))))))
+        '(default ((t (:family "Iosevka Nerd Font" :slant normal :weight regular :height 120 :width normal)))))))
 #+end_src
+
+* Font Ligatures
+
+Enable OpenType font ligatures (e.g. =->=, ===>=, =!=, ====, =<=) for programming and org modes.
+
+#+begin_src emacs-lisp
+(use-package ligature
+  :ensure t
+  :config
+  ;; Enable comprehensive programming and markdown/org ligatures
+  (ligature-set-ligatures '(prog-mode org-mode)
+    '("|||>" "<|||" "<==>" "<!--" "####" "~~>" "***" "||=" "||>"
+      ":::" "::=" "=:=" "===" "==>" "=!=" "=>>" "=<<" "=/=" "!=="
+      "!!." ">=>" ">>=" ">>>" ">>-" ">->" "->>" "-->" "---" "-<<"
+      "<~~" "<~>" "<*>" "<||" "<|>" "<$>" "<==" "<=>" "<=<" "<->"
+      "<--" "<-<" "<<=" "<<-" "<<<" "<+>" "</>" "###" "#_(" "..<"
+      "..." "+++" "/==" "///" "_|_" "www" "&&" "^=" "~~" "~@" "~="
+      "~>" "~-" "**" "*>" "*/" "||" "|}" "|]" "|=" "|>" "|-" "{|"
+      "[|" "]#" "::" ":=" ":>" ":<" "$>" "==" "=>" "!=" "!!" ">:"
+      ">=" ">>" ">-" "-~" "-|" "->" "--" "-<" "<~" "<*" "<|" "<:"
+      "<$" "<=" "<>" "<-" "<<" "<+" "</" "#{" "#[" "#:" "#=" "#!"
+      "##" "#(" "#?" "#_" "%%" ".=" ".-" ".." ".?" "+>" "++" "?:"
+      "?=" "?." "??" ";;" "/*" "/=" "/>" "//" "__" "~~" "(*" "*)"
+      "\\\\" "://"))
+  (global-ligature-mode t))
+#+end_src
+
 
