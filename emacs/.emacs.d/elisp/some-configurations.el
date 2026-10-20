@@ -6,10 +6,9 @@
 (global-set-key (kbd "C-x <down>") 'windmove-down)
 (global-set-key (kbd "C-x <up>") 'windmove-up)
 
-;; M-n / M-p / M-<down> / M-<up> fast motion lives in
-;; global-key-overrides.el, which binds them in a keymap that overrides
-;; every major and minor mode (plain `global-set-key' loses to comint,
-;; compilation, diff-mode, Info, ...).
+;; M-<arrow> navigation (M-<up>/M-<down> by lines, M-<left>/M-<right> by
+;; word) lives in global-key-overrides.el, where it overrides every mode.
+;; M-n / M-p are left to each mode's own meaning.
 
 ;; Rebinding the transpose keybindings because Ctrl-t is tmux prefix
 (global-set-key (kbd "C-ö") #'transpose-chars)
