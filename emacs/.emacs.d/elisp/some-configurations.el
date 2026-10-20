@@ -6,10 +6,10 @@
 (global-set-key (kbd "C-x <down>") 'windmove-down)
 (global-set-key (kbd "C-x <up>") 'windmove-up)
 
-(global-set-key (kbd "M-n") '(lambda () (interactive) (next-line  5)))
-(global-set-key (kbd "M-p") '(lambda () (interactive) (previous-line 5)))
-(global-set-key (kbd "M-<down>") '(lambda () (interactive) (next-line  5)))
-(global-set-key (kbd "M-<up>") '(lambda () (interactive) (previous-line 5)))
+;; M-n / M-p / M-<down> / M-<up> fast motion lives in
+;; global-key-overrides.el, which binds them in a keymap that overrides
+;; every major and minor mode (plain `global-set-key' loses to comint,
+;; compilation, diff-mode, Info, ...).
 
 ;; Rebinding the transpose keybindings because Ctrl-t is tmux prefix
 (global-set-key (kbd "C-ö") #'transpose-chars)

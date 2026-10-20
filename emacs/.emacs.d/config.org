@@ -130,6 +130,8 @@ Local LSP server directory managed by Emacs. Install servers with:
 (require 'results-buffer-origin)
 (require 'search-prompt-word-at-point)
 (require 'flash-jump-line)
+;; Last: its bindings must override every other map.
+(require 'global-key-overrides)
 #+end_src
 
 * Sensible Defaults
