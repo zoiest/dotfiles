@@ -1,13 +1,13 @@
 ;;; flash-jump-line.el --- Briefly flash the line you jump to -*- lexical-binding: t; -*-
 
-;; Flashes the destination line after a jump, so it is obvious where
-;; point landed. Covered jumps:
+;; Flashes a line to confirm where something happened. Covered events:
 ;;
-;;   - leaving isearch on a match
+;;   - leaving isearch on a match, and each C-s / C-r step within it
 ;;   - selecting a match in *xref*
 ;;   - selecting a match in *compilation*, *grep*, or *rg*
 ;;   - `next-error' / `previous-error', plus other next-error sources
 ;;     such as *Occur* and flymake
+;;   - saving the buffer with C-x C-s, whether or not anything was written
 ;;
 ;; Emacs' built-in `pulse' is deliberately not used for the highlight.
 ;; In a terminal frame (face-background 'default) is "unspecified-bg",
@@ -131,5 +131,17 @@ MK is the target marker passed to `compilation-goto-locus'."
 ;; --- everything else that uses the next-error protocol ---
 
 (add-hook 'next-error-hook #'my-flash-line)
+
+;; --- saving ---
+
+(defun my-flash-line--after-save-buffer (&rest _args)
+  "Flash the current line after a save attempt."
+  (my-flash-line))
+
+;; Advising `save-buffer' rather than using `after-save-hook' means the
+;; flash fires on every C-x C-s, including when there is nothing to write
+;; ("(No changes need to be saved)"), where the hook would not run. This
+;; also covers C-x s, since `save-some-buffers' calls `save-buffer'.
+(advice-add 'save-buffer :after #'my-flash-line--after-save-buffer)
 
 (provide 'flash-jump-line)
