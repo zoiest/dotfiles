@@ -439,6 +439,21 @@ Works regardless of TERM value, through tmux and SSH.
                     :background "#403e41"
                     :foreground "#ffd866"
                     :bold t)
+
+;; Matching parenthesis highlighting. `show-paren-mode' has been on by
+;; default since Emacs 28; enabling it explicitly documents the intent.
+(show-paren-mode 1)
+
+;; monokai-pro styles `show-paren-match' with bold + underline and no
+;; colour at all, which is easy to miss in a terminal. Give it a real
+;; background. Set after `load-theme' so the theme cannot overwrite it.
+;; Cyan is the theme's type-face colour; the line flash uses the theme's
+;; yellow, so the two stay visually distinct.
+(set-face-attribute 'show-paren-match nil
+                    :background "#78dce8"
+                    :foreground "#2d2a2e"
+                    :weight 'bold
+                    :underline nil)
 #+end_src
 
 * Undo Tree
