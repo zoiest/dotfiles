@@ -36,6 +36,41 @@ export SESSION_MANAGER=
 
 ---
 
+### Apple Magic Keyboard on Linux: `§` and `<` keys swapped
+
+On Apple keyboards with an ISO layout (e.g. Nordic/Finnish/Swedish or European layout), the key below <kbd>Esc</kbd> (which prints `§`) and the key next to <kbd>Left Shift</kbd> (which prints `<`) are swapped when connected via Bluetooth to Linux.
+
+**Cause:**
+1. Apple ISO keyboards physically emit inverted scancodes compared to PC standards (`KEY_102ND` for the key below <kbd>Esc</kbd>, and `KEY_GRAVE` for the key next to <kbd>Left Shift</kbd>).
+2. The Apple Magic Keyboard over Bluetooth reports a product ID of `0x0267` (`USB_DEVICE_ID_APPLE_MAGIC_KEYBOARD_ANSI`).
+3. Because of the ANSI product ID, the Linux kernel's `hid_apple` driver default `iso_layout=-1` (auto) treats it as an ANSI keyboard and does **not** apply the internal translation table (`apple_iso_keyboard`), leaving the keys inverted.
+
+**Fix:**
+Force `hid_apple` to apply the ISO layout translation table by setting `iso_layout=1`:
+
+1. **Test immediately:**
+   ```bash
+   echo 1 | sudo tee /sys/module/hid_apple/parameters/iso_layout
+   ```
+   *(If not immediate, toggle the physical power switch on the Magic Keyboard off and on to reconnect Bluetooth).*
+
+2. **Make it permanent across reboots:**
+   Add `options hid_apple iso_layout=1` to `/etc/modprobe.d/hid_apple.conf`:
+   ```bash
+   sudo tee /etc/modprobe.d/hid_apple.conf << 'EOF'
+   options hid_apple fnmode=2
+   options hid_apple swap_opt_cmd=1
+   options hid_apple iso_layout=1
+   EOF
+   ```
+
+3. **Rebuild initramfs:**
+   ```bash
+   sudo update-initramfs -u
+   ```
+
+---
+
 ## Linux Hibernation Configuration & Troubleshooting (ThinkPad AMD)
 
 ### 1. Configuring Hibernation with a Swap File
