@@ -853,6 +853,46 @@ unaffected everywhere else.
               ("C-c C-o" . markdown-follow-thing-at-point)))
 #+end_src
 
+* PDF Tools
+
+[[https://github.com/vedang/pdf-tools][PDF Tools]] replaces DocView for PDF files in Emacs, using the =epdfinfo=
+server to render PDF pages in-memory as PNG images.
+
+Key bindings in =pdf-view-mode=:
+- =SPC= / =S-SPC= (or =DEL=) :: Scroll forward / backward
+- =n= / =p= :: Next page / previous page
+- =+= / =-= / =0= :: Zoom in / zoom out / reset zoom
+- =C-s= / =C-r= :: Incremental search forward / backward
+- =o= :: Jump to outline / table of contents
+- =C-c C-a= :: Annotation commands (add highlights, notes, etc.)
+- =W= / =H= / =P= :: Fit to width / fit to height / fit to page
+
+#+begin_src emacs-lisp
+(use-package pdf-tools
+  :ensure t
+  :mode ("\\.[pP][dD][fF]\\'" . pdf-view-mode)
+  :magic ("%PDF" . pdf-view-mode)
+  :init
+  ;; On macOS with Homebrew, expose pkg-config path for poppler if rebuilding
+  (when (eq system-type 'darwin)
+    (let ((brew-pkgconfig "/opt/homebrew/lib/pkgconfig"))
+      (when (file-directory-p brew-pkgconfig)
+        (setenv "PKG_CONFIG_PATH"
+                (concat brew-pkgconfig ":" (or (getenv "PKG_CONFIG_PATH") ""))))))
+  ;; Defer initialization until the first PDF is opened to keep startup fast
+  (pdf-loader-install :no-query)
+  :custom
+  (pdf-view-display-size 'fit-page)
+  (pdf-annot-activate-created-annotations t)
+  :hook
+  ((pdf-view-mode . (lambda ()
+                      ;; Disable blinking cursor in PDF view
+                      (blink-cursor-mode -1)
+                      ;; Disable line numbers in PDF buffers
+                      (when (bound-and-true-p display-line-numbers-mode)
+                        (display-line-numbers-mode -1))))))
+#+end_src
+
 * Org Mode
 
 #+begin_src emacs-lisp
@@ -860,10 +900,8 @@ unaffected everywhere else.
   ;; Open HTML exports and links using the default browser instead of an Emacs text buffer
   (setf (alist-get "\\.x?html?\\'" org-file-apps nil nil #'equal)
         (lambda (file _link) (browse-url-of-file file)))
-  ;; Open PDF files with the system viewer
-  (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal)
-        (lambda (file _link)
-          (call-process (if (eq system-type 'darwin) "open" "xdg-open") nil 0 nil file))))
+  ;; Open PDF files in Emacs with pdf-tools
+  (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal) 'emacs))
 #+end_src
 
 * Org Roam

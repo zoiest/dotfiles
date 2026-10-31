@@ -8,7 +8,9 @@ export PLATFORM=$(uname -s)
 
 if [ "$PLATFORM" = Linux ]; then
    sudo apt-get update
-   sudo apt-get install -y tig ripgrep pandoc
+   sudo apt-get install -y tig ripgrep pandoc \
+       libpoppler-glib-dev libpoppler-private-dev libpng-dev zlib1g-dev \
+       autoconf automake pkg-config elpa-pdf-tools-server
    # sudo apt-get install -y stow golang python3-pip python3.10-venv ranger
    # curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - &&\
    #     sudo apt-get install -y nodejs
@@ -26,7 +28,8 @@ elif [ "$PLATFORM" = Darwin ]; then
     brew install stow
     # brew install golang node python3
     # pip3 install virtualenv
-    brew install font-hack-nerd-font tig ripgrep pandoc
+    brew install font-hack-nerd-font tig ripgrep pandoc \
+        poppler pkg-config automake autoconf
 fi
 
 echo "Fetch all git submodules..."
@@ -47,6 +50,13 @@ chmod +x ~/.local/bin/ydiff
 # install diff-so-fancy
 curl -L https://github.com/so-fancy/diff-so-fancy/releases/latest/download/diff-so-fancy > ~/.local/bin/diff-so-fancy
 chmod +x ~/.local/bin/diff-so-fancy
+
+# Ensure epdfinfo is available for Emacs pdf-tools on Linux if not present
+if [ "$PLATFORM" = Linux ] && ! command -v epdfinfo >/dev/null 2>&1; then
+    TEMP_DIR=$(mktemp -d)
+    (cd "$TEMP_DIR" && apt-get download elpa-pdf-tools-server 2>/dev/null && dpkg-deb -x elpa-pdf-tools-server*.deb . && cp usr/bin/epdfinfo ~/.local/bin/epdfinfo && chmod +x ~/.local/bin/epdfinfo) || true
+    rm -rf "$TEMP_DIR"
+fi
 
 stow --target=$HOME vim nvim tmux ranger wezterm vscode kitty lazygit ghostty emacs herdr
 git/configure-gitconfig.sh ${1:-}
