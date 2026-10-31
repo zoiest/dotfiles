@@ -16,11 +16,19 @@
 ;;; Confirm before exit
 (setq confirm-kill-emacs 'yes-or-no-p)
 
-;;; no backup files
-(setq make-backup-files nil)
+;;; Disable temporary files during editing (.#lock, #autosave#, backup~)
+;; 1. Lock files (.#filename) created while editing a buffer
+(setq create-lockfiles nil)
 
-;;; no autosave
+;; 2. Backup files (filename~) created on save
+(setq make-backup-files nil)
+(setq backup-inhibited t)
+(setq backup-directory-alist `((".*" . ,temporary-file-directory)))
+
+;; 3. Auto-save files (#filename#) and auto-save-list (.saves-...)
 (setq auto-save-default nil)
+(setq auto-save-list-file-prefix nil)
+(setq auto-save-file-name-transforms `((".*" ,temporary-file-directory t)))
 
 ;;; display fill column
 (add-hook 'prog-mode-hook #'display-fill-column-indicator-mode)

@@ -151,6 +151,15 @@ Local LSP server directory managed by Emacs. Install servers with:
 (global-auto-revert-mode 1)
 (delete-selection-mode 1)
 
+;; Disable temporary files during editing (.#lock, #autosave#, backup~)
+(setq create-lockfiles nil)
+(setq make-backup-files nil)
+(setq backup-inhibited t)
+(setq backup-directory-alist `((".*" . ,temporary-file-directory)))
+(setq auto-save-default nil)
+(setq auto-save-list-file-prefix nil)
+(setq auto-save-file-name-transforms `((".*" ,temporary-file-directory t)))
+
 ;; Keep 5 lines of context when cursor reaches edge of window (C-n/C-p)
 (setq scroll-margin 5)
 (setq scroll-conservatively 101)
