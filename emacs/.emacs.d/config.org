@@ -747,6 +747,52 @@ command was invoked from, one word at a time."
   (which-key-mode))
 #+end_src
 
+** Dired
+
+Preview Markdown or Org files (compiled via Pandoc =--webtex=) or HTML files
+directly in EWW using =P=.
+
+#+begin_src emacs-lisp
+(defun my/preview-markup-file (file &optional save-html)
+  "Compile Markdown or Org FILE with pandoc --webtex and view in EWW.
+With prefix argument SAVE-HTML (C-u), writes a sibling .html file;
+otherwise compiles to a temporary file."
+  (let ((out-file (if save-html
+                      (concat (file-name-sans-extension file) ".html")
+                    (make-temp-file "pandoc-preview-" nil ".html"))))
+    (message "Compiling %s with pandoc --webtex..." (file-name-nondirectory file))
+    (if (zerop (call-process "pandoc" nil nil nil file "-s" "--webtex" "-o" out-file))
+        (progn
+          (when (and save-html (derived-mode-p 'dired-mode))
+            (revert-buffer))
+          (eww-open-file out-file))
+      (user-error "Pandoc compilation failed"))))
+
+(defalias 'my/preview-markdown-file 'my/preview-markup-file)
+
+(with-eval-after-load 'dired
+  (defun my/dired-preview-markup-or-html (&optional save-html)
+    "Preview Markdown, Org, or HTML file at point in EWW with Pandoc --webtex math.
+With prefix argument SAVE-HTML (C-u), saves a sibling .html file;
+otherwise compiles to a temporary file."
+    (interactive "P")
+    (let* ((file (dired-get-filename nil t))
+           (ext (and file (file-name-extension file))))
+      (cond
+       ((null file)
+        (user-error "No file at point"))
+       ;; If Markdown or Org, compile with pandoc --webtex and view in EWW
+       ((member (downcase ext) '("md" "markdown" "org"))
+        (my/preview-markup-file file save-html))
+       ;; If HTML, open directly in EWW
+       ((member (downcase ext) '("html" "htm"))
+        (eww-open-file file))
+       (t
+        (user-error "Not a Markdown, Org, or HTML file: %s" file)))))
+
+  (define-key dired-mode-map (kbd "P") #'my/dired-preview-markup-or-html))
+#+end_src
+
 * Version Control
 
 ** diff-hl
@@ -868,7 +914,19 @@ unaffected everywhere else.
                            (local-unset-key (kbd "M-p"))))
   :bind (:map markdown-mode-map
               ("C-c C-e" . markdown-export)
-              ("C-c C-o" . markdown-follow-thing-at-point)))
+              ("C-c C-o" . markdown-follow-thing-at-point)
+              ("C-c C-v" . my/markdown-preview-eww)))
+
+(defun my/markdown-preview-eww (&optional save-html)
+  "Preview current Markdown buffer in EWW using pandoc --webtex.
+With prefix argument SAVE-HTML (C-u), writes a sibling .html file;
+otherwise compiles to a temporary file."
+  (interactive "P")
+  (if (buffer-file-name)
+      (progn
+        (when (buffer-modified-p) (save-buffer))
+        (my/preview-markdown-file (buffer-file-name) save-html))
+    (user-error "Buffer is not visiting a file")))
 #+end_src
 
 * PDF Tools
@@ -915,11 +973,26 @@ Key bindings in =pdf-view-mode=:
 
 #+begin_src emacs-lisp
 (with-eval-after-load 'org
+  ;; Pre-render LaTeX math to SVG via dvisvgm for native ox-html exports (clean inline math without JS)
+  (setq org-html-with-latex 'dvisvgm)
   ;; Open HTML exports and links using the default browser instead of an Emacs text buffer
   (setf (alist-get "\\.x?html?\\'" org-file-apps nil nil #'equal)
         (lambda (file _link) (browse-url-of-file file)))
   ;; Open PDF files in Emacs with pdf-tools
-  (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal) 'emacs))
+  (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal) 'emacs)
+  ;; Quick preview in EWW with pandoc --webtex math
+  (define-key org-mode-map (kbd "C-c C-p") #'my/org-preview-eww))
+
+(defun my/org-preview-eww (&optional save-html)
+  "Preview current Org buffer in EWW using pandoc --webtex.
+With prefix argument SAVE-HTML (C-u), writes a sibling .html file;
+otherwise compiles to a temporary file."
+  (interactive "P")
+  (if (buffer-file-name)
+      (progn
+        (when (buffer-modified-p) (save-buffer))
+        (my/preview-markup-file (buffer-file-name) save-html))
+    (user-error "Buffer is not visiting a file")))
 #+end_src
 
 * Org Roam
