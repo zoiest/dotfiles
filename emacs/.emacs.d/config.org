@@ -473,8 +473,17 @@ Works regardless of TERM value, through tmux and SSH.
   :defer 1
   :init
   (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+  ;; Bridge C-? (redo on Finnish layout) via F12 (\e[24~) because herdr
+  ;; converts C-? to DEL (0x7f) in legacy mode and swallows M-_ (\x1b_).
+  (define-key input-decode-map "\e[24~" (kbd "C-?"))
+  :bind
+  (:map undo-tree-map
+        ("<f12>" . undo-tree-redo)
+        ([f12] . undo-tree-redo))
   :config
   (global-undo-tree-mode)
+  (define-key undo-tree-map (kbd "<f12>") 'undo-tree-redo)
+  (define-key undo-tree-map [f12] 'undo-tree-redo)
   ;; Clear modified flag when buffer matches file on disk after undo
   (defun my-check-buffer-modified (buf)
     "Clear modified flag if BUF content matches the file on disk."
