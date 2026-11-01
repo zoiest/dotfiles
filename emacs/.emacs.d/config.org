@@ -939,6 +939,7 @@ Key bindings in =pdf-view-mode=:
 - =n= / =p= :: Next page / previous page
 - =+= / =-= / =0= :: Zoom in / zoom out / reset zoom
 - =C-s= / =C-r= :: Incremental search forward / backward
+- =F= / =f= :: Follow link via visual hints / search links
 - =o= :: Jump to outline / table of contents
 - =C-c C-a= :: Annotation commands (add highlights, notes, etc.)
 - =W= / =H= / =P= :: Fit to width / fit to height / fit to page
@@ -961,7 +962,8 @@ Key bindings in =pdf-view-mode=:
   (pdf-view-display-size 'fit-page)
   (pdf-annot-activate-created-annotations t)
   :hook
-  ((pdf-view-mode . (lambda ()
+  ((pdf-view-mode . pdf-tools-enable-minor-modes)
+   (pdf-view-mode . (lambda ()
                       ;; Disable blinking cursor in PDF view
                       (blink-cursor-mode -1)
                       ;; Disable line numbers in PDF buffers
