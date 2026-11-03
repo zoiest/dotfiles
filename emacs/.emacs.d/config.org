@@ -85,6 +85,34 @@ Use stapelberg's trick: run GC when Emacs loses focus, so pauses are invisible.
 * Paths and LSP Servers
 
 #+begin_src emacs-lisp
+;; macOS: a GUI Emacs is started by launchd rather than a shell, so it does
+;; not inherit the shell PATH and Homebrew's bin directory is absent. That
+;; breaks anything that shells out to a brew-installed tool. pdf-tools is
+;; the sharpest example: its build/server/autobuild probes for Homebrew with
+;; `which brew' and, failing that, abandons its macOS branch entirely, so
+;; epdfinfo is never built and `pdf-view-mode' cannot start.
+(defvar my-homebrew-bin-dirs
+  '("/opt/homebrew/bin" "/opt/homebrew/sbin" "/usr/local/bin")
+  "Homebrew binary directories, Apple Silicon and Intel prefixes.")
+
+(defun my-add-homebrew-paths (&optional dirs)
+  "Put Homebrew's binary directories on `exec-path' and PATH.
+DIRS defaults to `my-homebrew-bin-dirs', covering the Apple Silicon
+\(/opt/homebrew) and Intel (/usr/local) prefixes.  Only existing
+directories are added, and adding twice is a no-op.  Returns the list
+actually added."
+  (let (added)
+    (dolist (dir (or dirs my-homebrew-bin-dirs))
+      (when (and (file-directory-p dir)
+                 (not (member dir exec-path)))
+        (add-to-list 'exec-path dir)
+        (setenv "PATH" (concat dir ":" (getenv "PATH")))
+        (push dir added)))
+    (nreverse added)))
+
+(when (eq system-type 'darwin)
+  (my-add-homebrew-paths))
+
 (add-to-list 'exec-path (expand-file-name "~/.local/bin"))
 (add-to-list 'exec-path (expand-file-name "~/go/bin"))
 (add-to-list 'exec-path (expand-file-name "~/.local/go/bin"))
@@ -944,18 +972,50 @@ Key bindings in =pdf-view-mode=:
 - =C-c C-a= :: Annotation commands (add highlights, notes, etc.)
 - =W= / =H= / =P= :: Fit to width / fit to height / fit to page
 
+=epdfinfo= is a separate C server binary that pdf-tools needs; it is *not*
+shipped with the Emacs package. How it arrives differs per platform, which
+is why a config that works on one machine fails on another:
+
+- Debian / Ubuntu :: =sudo apt install elpa-pdf-tools-server= provides
+  =/usr/bin/epdfinfo=. Nothing needs building.
+- macOS :: nothing provides it. Install the build dependencies with
+  =brew install poppler automake autoconf pkg-config=, then build it with
+  =M-x pdf-tools-install=. The build script =build/server/autobuild= looks
+  for Homebrew using =which brew=, so Homebrew must be on Emacs'
+  =exec-path= -- see =my-add-homebrew-paths= in the Paths section.
+
+=pdf-info-epdfinfo-program= defaults to =(executable-find "epdfinfo")=, so
+the binary's directory has to be on =exec-path= before =pdf-info= loads.
+When it is missing, opening a PDF fails with
+=File mode specification error: (error pdf-info-epdfinfo-program is not executable)=,
+so the config below only claims =.pdf= files once the server is present.
+
 #+begin_src emacs-lisp
+(unless (executable-find "epdfinfo")
+  (message (concat "pdf-tools: epdfinfo not found, PDFs will open in DocView. "
+                   "Install it (apt: elpa-pdf-tools-server) or build it with "
+                   "M-x pdf-tools-install.")))
+
 (use-package pdf-tools
   :ensure t
+  ;; Without the server, `pdf-view-mode' cannot start and every PDF buffer
+  ;; dies with a mode specification error. Falling back to the built-in
+  ;; DocView is far better. `pdf-tools-install' stays reachable as an
+  ;; autoload, so the server can still be built from a running Emacs.
+  :if (executable-find "epdfinfo")
   :mode ("\\.[pP][dD][fF]\\'" . pdf-view-mode)
   :magic ("%PDF" . pdf-view-mode)
   :init
-  ;; On macOS with Homebrew, expose pkg-config path for poppler if rebuilding
+  ;; Seed PKG_CONFIG_PATH for both Homebrew prefixes (Apple Silicon and
+  ;; Intel) so ./configure can find poppler when epdfinfo is rebuilt.
+  ;; build/server/autobuild also sets this itself, adding the keg-only
+  ;; libffi/zlib/glib/pcre2 paths via `brew --prefix' -- but only once brew
+  ;; is on PATH, which `my-add-homebrew-paths' takes care of.
   (when (eq system-type 'darwin)
-    (let ((brew-pkgconfig "/opt/homebrew/lib/pkgconfig"))
-      (when (file-directory-p brew-pkgconfig)
+    (dolist (dir '("/opt/homebrew/lib/pkgconfig" "/usr/local/lib/pkgconfig"))
+      (when (file-directory-p dir)
         (setenv "PKG_CONFIG_PATH"
-                (concat brew-pkgconfig ":" (or (getenv "PKG_CONFIG_PATH") ""))))))
+                (concat dir ":" (or (getenv "PKG_CONFIG_PATH") ""))))))
   ;; Defer initialization until the first PDF is opened to keep startup fast
   (pdf-loader-install :no-query)
   :custom
