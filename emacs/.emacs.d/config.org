@@ -114,9 +114,11 @@ actually added."
   (my-add-homebrew-paths))
 
 (add-to-list 'exec-path (expand-file-name "~/.local/bin"))
+(add-to-list 'exec-path (expand-file-name "~/.cargo/bin"))
 (add-to-list 'exec-path (expand-file-name "~/go/bin"))
 (add-to-list 'exec-path (expand-file-name "~/.local/go/bin"))
-(setenv "PATH" (concat (expand-file-name "~/go/bin") ":"
+(setenv "PATH" (concat (expand-file-name "~/.cargo/bin") ":"
+                       (expand-file-name "~/go/bin") ":"
                        (expand-file-name "~/.local/go/bin") ":"
                        (getenv "PATH")))
 #+end_src
@@ -125,6 +127,7 @@ Local LSP server directory managed by Emacs. Install servers with:
 - =GOPATH=~/.emacs.d/lsp-servers GOBIN=~/.emacs.d/lsp-servers/bin go install golang.org/x/tools/gopls@latest=
 - =pip install --prefix=~/.emacs.d/lsp-servers robotframework-lsp=
 - =pip install --prefix=~/.emacs.d/lsp-servers pyright=
+- =rustup component add rust-analyzer rustfmt clippy= (installed into =~/.cargo/bin=)
 
 #+begin_src emacs-lisp
 (defvar my-lsp-server-dir (expand-file-name "lsp-servers" user-emacs-directory))
@@ -375,19 +378,21 @@ still be created or a buffer chosen freely.
 
 ** Toggle Results Buffers
 
-Toggle display of =*xref*=, =*grep*=, =*rg*=, =*compilation*= buffers.
+Toggle display of =*xref*=, =*grep*=, =*rg*=, =*compilation*=, =*rustic-compilation*=, or =*cargo-*= buffers.
 
 #+begin_src emacs-lisp
+(defun my-results-buffer-p (buf)
+  "Return non-nil if BUF is a results or compilation buffer."
+  (let ((name (buffer-name buf)))
+    (or (member name '("*xref*" "*grep*" "*rg*" "*compilation*" "*rustic-compilation*"))
+        (string-match-p "^\\*cargo-[^*]+\\*$" name))))
+
 (defun my-toggle-results-buffer ()
-  "Toggle display of a results buffer (*xref*, *grep*, *rg*, *compilation*)."
+  "Toggle display of a results buffer (*xref*, *grep*, *rg*, *compilation*, *cargo-*)."
   (interactive)
-  (let* ((buffers '("*xref*" "*grep*" "*rg*" "*compilation*"))
-         (visible (cl-find-if
-                   (lambda (name)
-                     (and (get-buffer name)
-                          (get-buffer-window name)))
-                   buffers))
-         (available (cl-find-if #'get-buffer buffers)))
+  (let* ((candidates (cl-remove-if-not #'my-results-buffer-p (buffer-list)))
+         (visible (cl-find-if #'get-buffer-window candidates))
+         (available (car candidates)))
     (cond
      (visible (quit-window nil (get-buffer-window visible)))
      (available (display-buffer available))
@@ -617,14 +622,50 @@ command was invoked from, one word at a time."
 
 ** Eglot (LSP)
 
+LSP keybindings (active in =eglot-managed-mode= under =C-c l=):
+- =M-.= / =M-?= / =M-,= :: Find definitions / references / pop marker stack
+- =C-c l a= :: Code actions (auto-import, implement trait, clippy quickfix)
+- =C-c l r= :: Rename symbol across project
+- =C-c l f= / =C-c l o= :: Format buffer / organize imports
+- =C-c l i= / =C-c l t= :: Find implementation / type definition
+- =C-c l d= :: Open full Eldoc documentation buffer
+- =C-c l h= :: Toggle inlay hints (types, parameter names, chaining)
+- =C-c l n= / =C-c l p= :: Next / previous Flymake diagnostic
+- =C-c l l= / =C-c l L= :: Buffer / project diagnostics list
+- =C-c l R= :: Reconnect LSP server
+
 #+begin_src emacs-lisp
+;; Allow larger JSON-RPC payloads from language servers (notably rust-analyzer).
+(setq read-process-output-max (* 1024 1024))
 (setq eglot-connect-timeout 120)
+(setq eglot-autoshutdown t)
+(setq eglot-events-buffer-config '(:size 0 :format full))
+
+;; Default workspace settings passed to language servers.
+(setq-default eglot-workspace-configuration
+              '(:rust-analyzer
+                (:check (:command "clippy")
+                 :cargo (:buildScripts (:enable t))
+                 :procMacro (:enable t))))
 
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio")))
   (add-to-list 'eglot-server-programs '(go-mode . ("gopls")))
   (add-to-list 'eglot-server-programs
-               '(robot-mode . ("python3" "-m" "robotframework_ls"))))
+               '(robot-mode . ("python3" "-m" "robotframework_ls")))
+  (define-key eglot-mode-map (kbd "C-c l a") #'eglot-code-actions)
+  (define-key eglot-mode-map (kbd "C-c l r") #'eglot-rename)
+  (define-key eglot-mode-map (kbd "C-c l f") #'eglot-format-buffer)
+  (define-key eglot-mode-map (kbd "C-c l o") #'my-eglot-organize-imports)
+  (define-key eglot-mode-map (kbd "C-c l i") #'eglot-find-implementation)
+  (define-key eglot-mode-map (kbd "C-c l t") #'eglot-find-typeDefinition)
+  (define-key eglot-mode-map (kbd "C-c l d") #'eldoc-doc-buffer)
+  (define-key eglot-mode-map (kbd "C-c l h") #'eglot-inlay-hints-mode)
+  (define-key eglot-mode-map (kbd "C-c l R") #'eglot-reconnect)
+  (define-key eglot-mode-map (kbd "C-c l n") #'flymake-goto-next-error)
+  (define-key eglot-mode-map (kbd "C-c l p") #'flymake-goto-prev-error)
+  (define-key eglot-mode-map (kbd "C-c l l") #'flymake-show-buffer-diagnostics)
+  (define-key eglot-mode-map (kbd "C-c l L") #'flymake-show-project-diagnostics))
 
 (add-hook 'prog-mode-hook 'eglot-ensure)
 
@@ -636,6 +677,94 @@ command was invoked from, one word at a time."
   (interactive)
   (ignore-errors
     (eglot-code-actions nil nil "source.organizeImports" t)))
+#+end_src
+
+** Rust
+
+Uses [[https://github.com/emacs-rustic/rustic][rustic]] backed by built-in =eglot= (=rust-analyzer= with =clippy= checks)
+and =flymake=. Formats automatically on save using =eglot-format-buffer= (or
+=rustfmt= directly when Eglot is not active).
+
+Key bindings in =rustic-mode=:
+- =C-c C-p= :: Open Cargo/Rustic command popup (=rustic-popup=)
+- =C-c C-c C-b= / =C-c C-c C-k= :: =cargo build= / =cargo check=
+- =C-c C-c C-l= / =C-c C-c f= :: =cargo clippy= / =cargo clippy --fix=
+- =C-c C-c C-r= :: =cargo run=
+- =C-c C-c C-t= / =C-c C-c C-c= :: Run all tests / test at point
+- =C-c C-c C-o= / =C-c C-c C-f= :: Format buffer / =cargo fmt= workspace
+- =C-c C-c d= :: =cargo doc=
+- =C-c C-c e= :: Expand macro at point via =rust-analyzer=
+- =C-c C-c m= :: Open =Cargo.toml= for current crate
+- =C-c C-c a= / =r= / =u= :: =cargo add= / =cargo rm= / =cargo upgrade=
+
+#+begin_src emacs-lisp
+(defun my-rust-before-save ()
+  "Format the current Rust buffer before saving.
+Prefers Eglot formatting in-place to preserve point and undo history;
+falls back to `rustfmt' when available, without failing on WIP syntax."
+  (cond
+   ((and (fboundp 'eglot-managed-p)
+         (eglot-managed-p)
+         (eglot-server-capable :documentFormattingProvider))
+    (ignore-errors (eglot-format-buffer)))
+   ((and (fboundp 'rust--format-call)
+         (executable-find (or (bound-and-true-p rust-rustfmt-bin) "rustfmt")))
+    (ignore-errors (rust--format-call (current-buffer))))))
+
+(defun my-rust-expand-macro ()
+  "Expand the Rust macro at point using rust-analyzer via Eglot."
+  (interactive)
+  (require 'eglot)
+  (let* ((server (eglot--current-server-or-lose))
+         (params (eglot--TextDocumentPositionParams))
+         (res (jsonrpc-request server :rust-analyzer/expandMacro params))
+         (name (plist-get res :name))
+         (expansion (plist-get res :expansion)))
+    (if (not expansion)
+        (message "No macro expansion at point.")
+      (let ((buf (get-buffer-create "*rust-analyzer macro expansion*")))
+        (with-current-buffer buf
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (when name
+              (insert (format "// Macro: %s\n\n" name)))
+            (insert expansion)
+            (rustic-macro-expansion-mode)
+            (goto-char (point-min))))
+        (display-buffer buf)))))
+
+(defun my-rust-mode-setup ()
+  "Configure buffer-local defaults for Rust editing."
+  (setq-local tab-width 4)
+  (setq-local indent-tabs-mode nil)
+  ;; Matches rustfmt's default max_width = 100.
+  (setq-local fill-column 100)
+  (add-hook 'before-save-hook #'my-rust-before-save nil t))
+
+;; Keep Flymake (used by Eglot) active even if Flycheck is loaded by another mode (e.g. tide).
+(with-eval-after-load 'rustic-flycheck
+  (remove-hook 'rustic-mode-hook #'flycheck-mode)
+  (remove-hook 'rustic-mode-hook #'flymake-mode-off)
+  (remove-hook 'flycheck-mode-hook #'rustic-flycheck-setup))
+
+(use-package rustic
+  :ensure t
+  :defer t
+  :mode ("\\.rs\\'" . rustic-mode)
+  :init
+  (setq rustic-lsp-client 'eglot)
+  (setq rustic-lsp-server 'rust-analyzer)
+  (setq rustic-lsp-check-command "clippy")
+  ;; Formatting on save is handled in `my-rust-before-save' to avoid `revert-buffer'.
+  (setq rustic-format-trigger nil)
+  (setq rustic-cargo-use-last-stored-arguments t)
+  :hook (rustic-mode . my-rust-mode-setup)
+  :bind (:map rustic-mode-map
+              ("C-c C-c e" . my-rust-expand-macro)
+              ("C-c C-c m" . rustic-open-dependency-file)))
+
+;; `.toml' / `Cargo.toml' already use built-in `conf-toml-mode'; cover `Cargo.lock' too.
+(add-to-list 'auto-mode-alist '("Cargo\\.lock\\'" . conf-toml-mode))
 #+end_src
 
 ** Go

@@ -12,13 +12,18 @@
 (defvar my-results-target-window nil
   "Most recently focused \"normal\" editing window (quickfix target).")
 
-(defvar my-results-buffer-names '("*xref*" "*grep*" "*rg*" "*compilation*")
+(defvar my-results-buffer-names '("*xref*" "*grep*" "*rg*" "*compilation*" "*rustic-compilation*")
   "Buffer names that should never be recorded as the quickfix target window.")
 
 (defun my-results-buffer--results-window-p (window)
   "Non-nil if WINDOW is showing a results buffer or the minibuffer."
-  (or (window-minibuffer-p window)
-      (member (buffer-name (window-buffer window)) my-results-buffer-names)))
+  (let* ((buf (window-buffer window))
+         (name (buffer-name buf)))
+    (or (window-minibuffer-p window)
+        (member name my-results-buffer-names)
+        (string-match-p "^\\*\\(cargo-[^*]+\\|Flymake diagnostics[^*]*\\)\\*$" name)
+        (with-current-buffer buf
+          (derived-mode-p 'compilation-mode 'flymake-diagnostics-buffer-mode)))))
 
 (defun my-results-buffer--track-target (&optional frame)
   "Update `my-results-target-window' with the current window, if it
@@ -58,5 +63,10 @@ so it composes safely and cannot recurse."
 ;; source buffer. Advise it the same way.
 (with-eval-after-load 'compile
   (advice-add 'compilation-goto-locus :around #'my-results-buffer--reuse-target-action))
+
+;; `rustic-compile-goto-error-hook' handles clicking/RET on line-number
+;; gutters inside `rustic-compilation-mode' via `find-file-other-window'.
+(with-eval-after-load 'rustic-compile
+  (advice-add 'rustic-compile-goto-error-hook :around #'my-results-buffer--reuse-target-action))
 
 (provide 'results-buffer-origin)

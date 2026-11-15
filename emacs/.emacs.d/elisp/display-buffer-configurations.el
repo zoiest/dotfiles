@@ -26,7 +26,7 @@ buffer in current window."
                 (no-delete-other-windows . nil))))
 
 (add-to-list 'display-buffer-alist
-             '("\\*\\(grep\\|scratch\\|xref\\|compilation\\|rg\\)\\*"
+             '("\\*\\(grep\\|scratch\\|xref\\|compilation\\|rg\\|rustic-compilation\\|cargo-[^*]+\\|rustfmt\\|Flymake diagnostics[^*]*\\)\\*"
                (display-buffer-in-side-window)
                (side . bottom)
                (slot . 0)
@@ -35,7 +35,7 @@ buffer in current window."
                 (no-delete-other-windows . nil))))
 
 (add-to-list 'display-buffer-alist
-             '("\\*\\([Hh]elp\\|Backtrace\\|Compile-[Ll]og\\|Warnings\\|Messages\\|Command History\\|command-log\\)\\*"
+             '("\\*\\([Hh]elp\\|Backtrace\\|Compile-[Ll]og\\|Warnings\\|Messages\\|Command History\\|command-log\\|eldoc\\|cargo-expand\\|rust-analyzer macro expansion[^*]*\\)\\*"
                (display-buffer-in-side-window)
                (side . right)
                (slot . 0)
