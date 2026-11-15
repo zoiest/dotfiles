@@ -39,7 +39,7 @@ if [ "$PLATFORM" = Linux ]; then
    # compilation is normally needed on Debian/Ubuntu.
    sudo apt-get install -y tig ripgrep pandoc \
        libpoppler-glib-dev libpoppler-private-dev libpng-dev zlib1g-dev \
-       autoconf automake pkg-config elpa-pdf-tools-server
+       autoconf automake pkg-config elpa-pdf-tools-server imagemagick
    # sudo apt-get install -y stow golang python3-pip python3.10-venv ranger
    # curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - &&\
    #     sudo apt-get install -y nodejs
@@ -63,7 +63,7 @@ elif [ "$PLATFORM" = Darwin ]; then
     # Homebrew has to be on Emacs' exec-path too -- see my-add-homebrew-paths
     # in emacs/.emacs.d/config.org.
     brew install font-hack-nerd-font tig ripgrep pandoc \
-        poppler pkg-config automake autoconf
+        poppler pkg-config automake autoconf imagemagick
 fi
 
 echo "Fetch all git submodules..."

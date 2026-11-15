@@ -1006,6 +1006,9 @@ so the config below only claims =.pdf= files once the server is present.
   :mode ("\\.[pP][dD][fF]\\'" . pdf-view-mode)
   :magic ("%PDF" . pdf-view-mode)
   :init
+  ;; Autoload pdf-roll functions so link clicking and overlay lookups work without void-function errors
+  (autoload 'pdf-roll-page-overlay "pdf-roll")
+  (autoload 'pdf-roll-displayed-pages "pdf-roll")
   ;; Seed PKG_CONFIG_PATH for both Homebrew prefixes (Apple Silicon and
   ;; Intel) so ./configure can find poppler when epdfinfo is rebuilt.
   ;; build/server/autobuild also sets this itself, adding the keg-only
@@ -1021,9 +1024,22 @@ so the config below only claims =.pdf= files once the server is present.
   :custom
   (pdf-view-display-size 'fit-page)
   (pdf-annot-activate-created-annotations t)
+  :config
+  ;; Locate convert (ImageMagick 6) or magick (ImageMagick 7)
+  (setq pdf-util-convert-program (or (executable-find "convert")
+                                     (executable-find "magick")))
+  ;; Friendly message if ImageMagick is missing when calling visual link hints (F)
+  (with-eval-after-load 'pdf-links
+    (advice-add 'pdf-links-action-perform :before
+                (lambda (&optional link)
+                  (unless link
+                    (unless (and pdf-util-convert-program (file-executable-p pdf-util-convert-program))
+                      (user-error "ImageMagick ('convert') is required for keyboard link hints (F). Please run: sudo apt install imagemagick"))))))
   :hook
-  ((pdf-view-mode . pdf-tools-enable-minor-modes)
-   (pdf-view-mode . (lambda ()
+  ((pdf-view-mode . (lambda ()
+                      ;; Require pdf-roll for overlay and continuous scroll support
+                      (require 'pdf-roll)
+                      (pdf-tools-enable-minor-modes)
                       ;; Disable blinking cursor in PDF view
                       (blink-cursor-mode -1)
                       ;; Disable line numbers in PDF buffers
