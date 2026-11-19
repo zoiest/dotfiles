@@ -1091,8 +1091,9 @@ otherwise compiles to a temporary file."
 [[https://github.com/vedang/pdf-tools][PDF Tools]] replaces DocView for PDF files in Emacs, using the =epdfinfo=
 server to render PDF pages in-memory as PNG images.
 
-Key bindings in =pdf-view-mode=:
-- =SPC= / =S-SPC= (or =DEL=) :: Scroll forward / backward
+Key bindings in =pdf-view-mode= (with continuous scrolling enabled via =pdf-view-roll-minor-mode=):
+- =SPC= / =C-v= :: Scroll forward continuously
+- =S-SPC= / =DEL= / =M-v= :: Scroll backward continuously
 - =n= / =p= :: Next page / previous page
 - =+= / =-= / =0= :: Zoom in / zoom out / reset zoom
 - =C-s= / =C-r= :: Incremental search forward / backward
@@ -1100,6 +1101,7 @@ Key bindings in =pdf-view-mode=:
 - =o= :: Jump to outline / table of contents
 - =C-c C-a= :: Annotation commands (add highlights, notes, etc.)
 - =W= / =H= / =P= :: Fit to width / fit to height / fit to page
+- =M-x pdf-view-roll-minor-mode= :: Toggle continuous scrolling on/off
 
 =epdfinfo= is a separate C server binary that pdf-tools needs; it is *not*
 shipped with the Emacs package. How it arrives differs per platform, which
@@ -1157,6 +1159,10 @@ so the config below only claims =.pdf= files once the server is present.
   ;; Locate convert (ImageMagick 6) or magick (ImageMagick 7)
   (setq pdf-util-convert-program (or (executable-find "convert")
                                      (executable-find "magick")))
+  ;; Let C-v / M-v use pdf-view (and thus pdf-roll) scrolling instead of global half-page text scroll
+  (with-eval-after-load 'pdf-view
+    (define-key pdf-view-mode-map (kbd "C-v") #'pdf-view-scroll-up-or-next-page)
+    (define-key pdf-view-mode-map (kbd "M-v") #'pdf-view-scroll-down-or-previous-page))
   ;; Friendly message if ImageMagick is missing when calling visual link hints (F)
   (with-eval-after-load 'pdf-links
     (advice-add 'pdf-links-action-perform :before
@@ -1169,6 +1175,10 @@ so the config below only claims =.pdf= files once the server is present.
                       ;; Require pdf-roll for overlay and continuous scroll support
                       (require 'pdf-roll)
                       (pdf-tools-enable-minor-modes)
+                      ;; Enable continuous scrolling
+                      (pdf-view-roll-minor-mode 1)
+                      ;; Prevent global scroll-margin from fighting pdf-roll page positioning
+                      (setq-local scroll-margin 0)
                       ;; Disable blinking cursor in PDF view
                       (blink-cursor-mode -1)
                       ;; Disable line numbers in PDF buffers
