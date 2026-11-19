@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zoïe's GNU Emacs Reference Card</title>
+<style>
+/* ── Print: A4 landscape, tri-fold columns ── */
+@page {
+  size: A4 landscape;
+  margin: 7mm 6mm;
+}
+@media print {
+  body { margin: 0; padding: 0; }
+  .page-break { page-break-before: always; }
+}
+
+/* ── Base typography ── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Iosevka", "Iosevka Nerd Font", "DejaVu Sans Mono", "Liberation Mono", monospace;
+  font-size: 7pt;
+  line-height: 1.25;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+/* ── Each "page" is a landscape sheet with 3 columns ── */
+.sheet {
+  width: 100%;
+  column-count: 3;
+  column-gap: 10pt;
+  column-rule: 0.4pt solid #bbb;
+  padding: 2pt 0;
+}
+
+/* ── Title banner ── */
+.title-banner {
+  column-span: all;
+  text-align: center;
+  border-bottom: 1.5pt solid #000;
+  padding-bottom: 3pt;
+  margin-bottom: 5pt;
+}
+.title-banner h1 {
+  font-size: 13pt;
+  font-weight: 900;
+  letter-spacing: 0.5pt;
+  margin: 0;
+}
+.title-banner .subtitle {
+  font-size: 7pt;
+  font-weight: normal;
+  color: #444;
+}
+
+/* ── Section headers ── */
+.section {
+  break-inside: avoid;
+  margin-bottom: 4pt;
+}
+.section h2 {
+  font-size: 8pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6pt;
+  border-bottom: 0.8pt solid #000;
+  padding-bottom: 1pt;
+  margin-bottom: 2pt;
+}
+.section h3 {
+  font-size: 7pt;
+  font-weight: 700;
+  margin-top: 3pt;
+  margin-bottom: 1pt;
+  color: #333;
+}
+
+/* ── Keybinding table ── */
+.keys {
+  width: 100%;
+  border-collapse: collapse;
+}
+.keys td {
+  vertical-align: top;
+  padding: 0.4pt 1pt;
+}
+.keys td:first-child {
+  white-space: nowrap;
+  font-weight: 700;
+  width: 38%;
+  padding-right: 4pt;
+}
+.keys td:last-child {
+  color: #333;
+}
+.keys tr.spacer td {
+  padding-top: 2pt;
+}
+
+/* ── Key styling ── */
+kbd {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 800;
+}
+
+/* ── Separator between subsections ── */
+.sep {
+  border: 0;
+  border-top: 0.3pt dotted #999;
+  margin: 2pt 0;
+}
+
+/* ── Footnote / legend ── */
+.legend {
+  font-size: 6.5pt;
+  color: #555;
+  margin-top: 3pt;
+  break-inside: avoid;
+}
+.legend code {
+  font-weight: 700;
+}
+
+/* ── Side 2 title ── */
+.side-title {
+  column-span: all;
+  text-align: center;
+  border-bottom: 1pt solid #000;
+  padding-bottom: 2pt;
+  margin-bottom: 5pt;
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: 0.4pt;
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SIDE 1 — Core editing, navigation, search, LSP, window management
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="sheet">
+
+<div class="title-banner">
+  <h1>Zoïe's GNU Emacs Reference Card</h1>
+  <div class="subtitle">Personal config · Monokai Pro · Eglot · Ivy/Counsel · Undo-tree · Magit · Rustic · Org-roam · PDF-tools</div>
+</div>
+
+<!-- ── Column 1 ────────────────────────────────────── -->
+
+<div class="section">
+<h2>Fundamentals</h2>
+<table class="keys">
+<tr><td><kbd>C-x C-f</kbd></td><td>Open file</td></tr>
+<tr><td><kbd>C-x C-s</kbd></td><td>Save file (flashes line)</td></tr>
+<tr><td><kbd>C-x s</kbd></td><td>Save some buffers</td></tr>
+<tr><td><kbd>C-x C-c</kbd></td><td>Quit Emacs (confirms)</td></tr>
+<tr><td><kbd>C-x c</kbd></td><td>→ mapped to C-x C-c</td></tr>
+<tr><td><kbd>C-g</kbd></td><td>Cancel / abort</td></tr>
+<tr><td><kbd>C-x u</kbd></td><td>Undo (undo-tree)</td></tr>
+<tr><td><kbd>C-/</kbd></td><td>Undo (undo-tree)</td></tr>
+<tr><td><kbd>C-?</kbd></td><td>Redo (undo-tree)</td></tr>
+<tr><td><kbd>F12</kbd></td><td>Redo (undo-tree)</td></tr>
+<tr><td><kbd>C-x b</kbd></td><td>Switch buffer (Ivy)</td></tr>
+<tr><td><kbd>C-x k</kbd></td><td>Kill buffer</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Navigation — Motion</h2>
+<table class="keys">
+<tr><td><kbd>C-f / C-b</kbd></td><td>Forward / back char</td></tr>
+<tr><td><kbd>M-f / M-b</kbd></td><td>Forward / back word</td></tr>
+<tr><td><kbd>M-→ / M-←</kbd></td><td>Forward / back word (override)</td></tr>
+<tr><td><kbd>M-↑ / M-↓</kbd></td><td>Move 5 lines up / down (override)</td></tr>
+<tr><td><kbd>C-a / C-e</kbd></td><td>Beginning / end of line</td></tr>
+<tr><td><kbd>Home / End</kbd></td><td>Beginning / end of line</td></tr>
+<tr><td><kbd>C-v</kbd></td><td>Scroll ½ page down</td></tr>
+<tr><td><kbd>M-v</kbd></td><td>Scroll ½ page up</td></tr>
+<tr><td><kbd>M-&lt;</kbd></td><td>Beginning of buffer</td></tr>
+<tr><td><kbd>M-&gt;</kbd></td><td>End of buffer</td></tr>
+<tr><td><kbd>C-l</kbd></td><td>Recenter top/mid/bottom</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Navigation — History</h2>
+<h3>VS Code-style go back / forward</h3>
+<table class="keys">
+<tr><td><kbd>C-o</kbd></td><td>Go back (nav history)</td></tr>
+<tr><td><kbd>C-i</kbd></td><td>Go forward (nav history)</td></tr>
+<tr><td><kbd>C-c o</kbd></td><td>Open line (moved from C-o)</td></tr>
+<tr><td><kbd>C-c i</kbd></td><td>Indent (moved from C-i)</td></tr>
+</table>
+<div class="legend">Auto-pushes on: buffer switch, 20+ line jump, xref, imenu, M-&lt;, M-&gt;</div>
+</div>
+
+<div class="section">
+<h2>Editing</h2>
+<table class="keys">
+<tr><td><kbd>M-d</kbd></td><td>Delete word forward (no kill ring)</td></tr>
+<tr><td><kbd>M-⌫</kbd></td><td>Delete word backward (no kill ring)</td></tr>
+<tr><td><kbd>C-k</kbd></td><td>Delete to end of line (no kill ring)</td></tr>
+<tr><td><kbd>C-S-k</kbd></td><td>Delete to start of line (no kill ring)</td></tr>
+<tr><td><kbd>C-w</kbd></td><td>Kill region</td></tr>
+<tr><td><kbd>M-w</kbd></td><td>Copy region</td></tr>
+<tr><td><kbd>C-y</kbd></td><td>Yank (paste)</td></tr>
+<tr><td><kbd>M-y</kbd></td><td>Yank previous kill</td></tr>
+<tr><td><kbd>M-;</kbd></td><td>Comment / uncomment line or region</td></tr>
+<tr><td><kbd>C-ö</kbd></td><td>Transpose chars (frees C-t for tmux)</td></tr>
+<tr><td><kbd>M-=</kbd></td><td>Expand region (word→sexp→defun)</td></tr>
+<tr><td><kbd>M-click</kbd></td><td>Expand region at click position</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Text Size</h2>
+<table class="keys">
+<tr><td><kbd>C-+</kbd> / <kbd>C-=</kbd></td><td>Increase text size</td></tr>
+<tr><td><kbd>C--</kbd></td><td>Decrease text size</td></tr>
+<tr><td><kbd>C-)</kbd></td><td>Reset text size</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Selection</h2>
+<table class="keys">
+<tr><td><kbd>C-SPC</kbd></td><td>Set mark / start selection</td></tr>
+<tr><td><kbd>dbl-click</kbd></td><td>Select compound word (camelCase)</td></tr>
+<tr><td><kbd>triple-click</kbd></td><td>Select entire line</td></tr>
+<tr><td><kbd>M-=</kbd></td><td>Expand region progressively</td></tr>
+</table>
+</div>
+
+<!-- ── Column 2 ────────────────────────────────────── -->
+
+<div class="section">
+<h2>Search &amp; Replace</h2>
+<h3>Isearch (enhanced)</h3>
+<table class="keys">
+<tr><td><kbd>C-s</kbd></td><td>Isearch forward (region prefills)</td></tr>
+<tr><td><kbd>C-r</kbd></td><td>Isearch backward (region prefills)</td></tr>
+<tr><td><kbd>C-w</kbd> <i>in isearch</i></td><td>1st: grab compound word at point<br>next: extend by word</td></tr>
+<tr><td><kbd>C-s C-s</kbd></td><td>Search for last search string</td></tr>
+<tr><td><kbd>RET</kbd></td><td>Exit isearch at match (flashes)</td></tr>
+</table>
+<h3>Query Replace (enhanced)</h3>
+<table class="keys">
+<tr><td><kbd>M-%</kbd></td><td>Query replace (C-w pulls word)</td></tr>
+<tr><td><kbd>C-M-%</kbd></td><td>Query replace regexp (C-w pulls)</td></tr>
+</table>
+<h3>Project Search</h3>
+<table class="keys">
+<tr><td><kbd>C-c g g</kbd></td><td>Git grep (region/C-w prefill)</td></tr>
+<tr><td><kbd>C-c r r</kbd></td><td>Ripgrep project (region/C-w prefill)</td></tr>
+<tr><td><kbd>C-c f f</kbd></td><td>Find file by name (counsel)</td></tr>
+<tr><td><kbd>C-c g f</kbd></td><td>Git-tracked files (counsel)</td></tr>
+<tr><td><kbd>C-c C-r</kbd></td><td>Resume last Ivy completion</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Eglot — LSP</h2>
+<table class="keys">
+<tr><td><kbd>M-.</kbd></td><td>Find definition (xref)</td></tr>
+<tr><td><kbd>M-?</kbd></td><td>Find references (xref)</td></tr>
+<tr><td><kbd>M-,</kbd></td><td>Pop back (xref marker stack)</td></tr>
+<tr class="spacer"><td><kbd>C-c l a</kbd></td><td>Code actions</td></tr>
+<tr><td><kbd>C-c l r</kbd></td><td>Rename symbol</td></tr>
+<tr><td><kbd>C-c l f</kbd></td><td>Format buffer</td></tr>
+<tr><td><kbd>C-c l o</kbd></td><td>Organize imports</td></tr>
+<tr><td><kbd>C-c l i</kbd></td><td>Find implementation</td></tr>
+<tr><td><kbd>C-c l t</kbd></td><td>Find type definition</td></tr>
+<tr><td><kbd>C-c l d</kbd></td><td>Eldoc documentation buffer</td></tr>
+<tr><td><kbd>C-c l h</kbd></td><td>Toggle inlay hints</td></tr>
+<tr class="spacer"><td><kbd>C-c l n</kbd></td><td>Next Flymake diagnostic</td></tr>
+<tr><td><kbd>C-c l p</kbd></td><td>Previous Flymake diagnostic</td></tr>
+<tr><td><kbd>C-c l l</kbd></td><td>Buffer diagnostics list</td></tr>
+<tr><td><kbd>C-c l L</kbd></td><td>Project diagnostics list</td></tr>
+<tr class="spacer"><td><kbd>C-c l R</kbd></td><td>Reconnect LSP server</td></tr>
+</table>
+<div class="legend">Active in <code>eglot-managed-mode</code>. Servers: rust-analyzer (clippy), gopls, pyright, robotframework-ls</div>
+</div>
+
+<div class="section">
+<h2>Windows &amp; Buffers</h2>
+<table class="keys">
+<tr><td><kbd>C-x →</kbd></td><td>Focus window right</td></tr>
+<tr><td><kbd>C-x ←</kbd></td><td>Focus window left</td></tr>
+<tr><td><kbd>C-x ↑</kbd></td><td>Focus window up</td></tr>
+<tr><td><kbd>C-x ↓</kbd></td><td>Focus window down</td></tr>
+<tr class="spacer"><td><kbd>C-x 2</kbd></td><td>Split below + focus new</td></tr>
+<tr><td><kbd>C-x 3</kbd></td><td>Split right + focus new</td></tr>
+<tr><td><kbd>C-x 0</kbd></td><td>Close current window</td></tr>
+<tr><td><kbd>C-x 1</kbd></td><td>Maximize current window</td></tr>
+<tr class="spacer"><td><kbd>C-c q</kbd></td><td>Close popup/side window</td></tr>
+<tr><td><kbd>C-c x</kbd></td><td>Toggle results buffer</td></tr>
+<tr><td><kbd>C-c y p</kbd></td><td>Copy file path (git-relative)</td></tr>
+</table>
+<div class="legend">Results buffers (*xref*, *grep*, *rg*, *compilation*, *cargo-*) display in bottom side window. Targets land in last focused edit window (quickfix behavior).</div>
+</div>
+
+<!-- ── Column 3 ────────────────────────────────────── -->
+
+<div class="section">
+<h2>Rust — Rustic + Eglot</h2>
+<h3>Cargo Commands (C-c C-c prefix)</h3>
+<table class="keys">
+<tr><td><kbd>C-c C-p</kbd></td><td>Rustic command popup</td></tr>
+<tr><td><kbd>C-c C-c C-b</kbd></td><td>cargo build</td></tr>
+<tr><td><kbd>C-c C-c C-k</kbd></td><td>cargo check</td></tr>
+<tr><td><kbd>C-c C-c C-l</kbd></td><td>cargo clippy</td></tr>
+<tr><td><kbd>C-c C-c f</kbd></td><td>cargo clippy --fix</td></tr>
+<tr><td><kbd>C-c C-c C-r</kbd></td><td>cargo run</td></tr>
+<tr><td><kbd>C-c C-c C-t</kbd></td><td>cargo test (all)</td></tr>
+<tr><td><kbd>C-c C-c C-c</kbd></td><td>cargo test at point</td></tr>
+<tr><td><kbd>C-c C-c C-o</kbd></td><td>Format buffer (eglot/rustfmt)</td></tr>
+<tr><td><kbd>C-c C-c C-f</kbd></td><td>cargo fmt (workspace)</td></tr>
+<tr><td><kbd>C-c C-c d</kbd></td><td>cargo doc</td></tr>
+<tr><td><kbd>C-c C-c e</kbd></td><td>Expand macro at point (RA)</td></tr>
+<tr><td><kbd>C-c C-c m</kbd></td><td>Open Cargo.toml</td></tr>
+<tr class="spacer"><td><kbd>C-c C-c a</kbd></td><td>cargo add</td></tr>
+<tr><td><kbd>C-c C-c r</kbd></td><td>cargo rm</td></tr>
+<tr><td><kbd>C-c C-c u</kbd></td><td>cargo upgrade</td></tr>
+</table>
+<div class="legend">Auto-format on save via eglot → rustfmt fallback. rust-analyzer with <code>clippy</code> check, proc macros enabled.</div>
+</div>
+
+<div class="section">
+<h2>Go</h2>
+<table class="keys">
+<tr><td colspan="2"><i>Auto-format on save: goimports → gofmt</i></td></tr>
+<tr><td colspan="2"><i>LSP: gopls via eglot-ensure</i></td></tr>
+<tr><td><kbd>tab-width</kbd></td><td>4, indent with tabs</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Git — Magit</h2>
+<table class="keys">
+<tr><td><kbd>C-c g s</kbd></td><td>Magit status</td></tr>
+<tr><td><kbd>C-c g b</kbd></td><td>Magit blame</td></tr>
+</table>
+<h3>Inside Magit Status</h3>
+<table class="keys">
+<tr><td><kbd>s / u</kbd></td><td>Stage / unstage</td></tr>
+<tr><td><kbd>c c</kbd></td><td>Commit</td></tr>
+<tr><td><kbd>P p</kbd></td><td>Push</td></tr>
+<tr><td><kbd>F p</kbd></td><td>Pull</td></tr>
+<tr><td><kbd>b b</kbd></td><td>Checkout branch</td></tr>
+<tr><td><kbd>l l</kbd></td><td>Log current branch</td></tr>
+<tr><td><kbd>d d</kbd></td><td>Diff</td></tr>
+<tr><td><kbd>z z</kbd></td><td>Stash</td></tr>
+<tr><td><kbd>?</kbd></td><td>Help / list all commands</td></tr>
+</table>
+<div class="legend">diff-hl shows gutter indicators. Commit: 50 char summary, 72 col body, fill-column-indicator on.</div>
+</div>
+
+<div class="section">
+<h2>TypeScript / JavaScript</h2>
+<table class="keys">
+<tr><td colspan="2"><i>Tide + Flycheck, 2-space indent</i></td></tr>
+<tr><td><kbd>M-.</kbd></td><td>Find definition (xref-js2/Tide)</td></tr>
+<tr><td><kbd>M-,</kbd></td><td>Pop marker stack</td></tr>
+<tr><td colspan="2"><i>import-js auto-fixes imports on save</i></td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Org-roam Notes</h2>
+<table class="keys">
+<tr><td><kbd>C-c n f</kbd></td><td>Find / create node</td></tr>
+<tr><td><kbd>C-c n i</kbd></td><td>Insert node link</td></tr>
+<tr><td><kbd>C-c n l</kbd></td><td>Toggle backlinks buffer</td></tr>
+<tr><td><kbd>C-c n c</kbd></td><td>Capture note</td></tr>
+<tr><td><kbd>C-c n g</kbd></td><td>Visualize graph</td></tr>
+<tr><td><kbd>C-c n j</kbd></td><td>Daily note capture</td></tr>
+<tr><td><kbd>C-c n d</kbd></td><td>Dailies keymap prefix</td></tr>
+<tr><td><kbd>C-c n e</kbd></td><td>Export org dir → HTML</td></tr>
+</table>
+</div>
+
+</div><!-- end sheet side 1 -->
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SIDE 2 — Dired, Compile, PDF, Org, Markdown, built-in essentials
+     ════════════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<div class="sheet">
+
+<div class="side-title">Side 2 — Modes &amp; Built-in Power Tools</div>
+
+<!-- ── Column 1 ────────────────────────────────────── -->
+
+<div class="section">
+<h2>Dired — File Manager</h2>
+<h3>Navigation</h3>
+<table class="keys">
+<tr><td><kbd>RET</kbd></td><td>Open file / enter directory</td></tr>
+<tr><td><kbd>^</kbd></td><td>Go to parent directory</td></tr>
+<tr><td><kbd>j</kbd></td><td>Jump to filename</td></tr>
+<tr><td><kbd>n / p</kbd></td><td>Next / previous file</td></tr>
+<tr><td><kbd>g</kbd></td><td>Refresh directory listing</td></tr>
+<tr><td><kbd>(</kbd></td><td>Toggle details (hide/show)</td></tr>
+</table>
+<h3>Marking</h3>
+<table class="keys">
+<tr><td><kbd>m</kbd></td><td>Mark file</td></tr>
+<tr><td><kbd>u</kbd></td><td>Unmark file</td></tr>
+<tr><td><kbd>U</kbd></td><td>Unmark all</td></tr>
+<tr><td><kbd>t</kbd></td><td>Toggle marks (invert)</td></tr>
+<tr><td><kbd>% m</kbd></td><td>Mark by regexp</td></tr>
+<tr><td><kbd>* /</kbd></td><td>Mark all directories</td></tr>
+<tr><td><kbd>* .</kbd></td><td>Mark by extension</td></tr>
+</table>
+<h3>Operations</h3>
+<table class="keys">
+<tr><td><kbd>C</kbd></td><td>Copy marked files</td></tr>
+<tr><td><kbd>R</kbd></td><td>Rename / move marked files</td></tr>
+<tr><td><kbd>D</kbd></td><td>Delete marked files</td></tr>
+<tr><td><kbd>+</kbd></td><td>Create directory</td></tr>
+<tr><td><kbd>Z</kbd></td><td>Compress / decompress</td></tr>
+<tr><td><kbd>M</kbd></td><td>chmod</td></tr>
+<tr><td><kbd>G</kbd></td><td>chgrp</td></tr>
+<tr><td><kbd>O</kbd></td><td>chown</td></tr>
+<tr><td><kbd>!</kbd></td><td>Shell command on file</td></tr>
+<tr><td><kbd>&amp;</kbd></td><td>Async shell command on file</td></tr>
+</table>
+<h3>Editing (wdired)</h3>
+<table class="keys">
+<tr><td><kbd>C-x C-q</kbd></td><td>Edit filenames (wdired mode)</td></tr>
+<tr><td><kbd>C-c C-c</kbd></td><td>Commit renames</td></tr>
+<tr><td><kbd>C-c ESC</kbd></td><td>Cancel wdired edits</td></tr>
+</table>
+<h3>Custom</h3>
+<table class="keys">
+<tr><td><kbd>P</kbd></td><td>Preview Markdown/Org/HTML in EWW</td></tr>
+<tr><td><kbd>C-u P</kbd></td><td>… and save sibling .html</td></tr>
+</table>
+<div class="legend">Human-readable sizes. Less verbose (ls-lisp). Pandoc --webtex for math rendering in previews.</div>
+</div>
+
+<div class="section">
+<h2>Compilation Mode</h2>
+<h3>Starting Compilation</h3>
+<table class="keys">
+<tr><td><kbd>M-x compile</kbd></td><td>Run compile command</td></tr>
+<tr><td><kbd>M-x recompile</kbd></td><td>Re-run last compile</td></tr>
+<tr><td><kbd>g</kbd> <i>in *compilation*</i></td><td>Recompile</td></tr>
+</table>
+<h3>Navigating Errors</h3>
+<table class="keys">
+<tr><td><kbd>M-g n</kbd></td><td>Next error (any next-error src)</td></tr>
+<tr><td><kbd>M-g p</kbd></td><td>Previous error</td></tr>
+<tr><td><kbd>RET</kbd> <i>in buffer</i></td><td>Jump to error location</td></tr>
+<tr><td><kbd>n / p</kbd></td><td>Next / prev error in buffer</td></tr>
+<tr><td><kbd>q</kbd></td><td>Quit compilation window</td></tr>
+</table>
+<div class="legend">Error jumps flash destination line. Results land in last focused edit window (quickfix).</div>
+</div>
+
+<!-- ── Column 2 ────────────────────────────────────── -->
+
+<div class="section">
+<h2>PDF Tools</h2>
+<table class="keys">
+<tr><td><kbd>SPC / S-SPC</kbd></td><td>Scroll forward / backward</td></tr>
+<tr><td><kbd>n / p</kbd></td><td>Next / previous page</td></tr>
+<tr><td><kbd>+ / - / 0</kbd></td><td>Zoom in / out / reset</td></tr>
+<tr><td><kbd>W / H / P</kbd></td><td>Fit width / height / page</td></tr>
+<tr><td><kbd>C-s / C-r</kbd></td><td>Search forward / backward</td></tr>
+<tr><td><kbd>F</kbd></td><td>Follow link (visual hints)</td></tr>
+<tr><td><kbd>f</kbd></td><td>Search links</td></tr>
+<tr><td><kbd>o</kbd></td><td>Jump to outline / TOC</td></tr>
+<tr><td><kbd>C-c C-a</kbd></td><td>Annotation commands</td></tr>
+</table>
+<div class="legend">Requires <code>epdfinfo</code> server. Falls back to DocView when absent.</div>
+</div>
+
+<div class="section">
+<h2>Org Mode</h2>
+<h3>Navigation &amp; Structure</h3>
+<table class="keys">
+<tr><td><kbd>TAB</kbd></td><td>Cycle heading visibility</td></tr>
+<tr><td><kbd>S-TAB</kbd></td><td>Cycle global visibility</td></tr>
+<tr><td><kbd>C-c C-n / C-p</kbd></td><td>Next / prev heading</td></tr>
+<tr><td><kbd>C-c C-f / C-b</kbd></td><td>Next / prev same-level</td></tr>
+<tr><td><kbd>C-c C-u</kbd></td><td>Up to parent heading</td></tr>
+<tr><td><kbd>M-RET</kbd></td><td>New heading / list item</td></tr>
+<tr><td><kbd>M-S-RET</kbd></td><td>New TODO heading</td></tr>
+</table>
+<h3>Editing</h3>
+<table class="keys">
+<tr><td><kbd>C-c C-t</kbd></td><td>Cycle TODO state</td></tr>
+<tr><td><kbd>C-c C-s / C-d</kbd></td><td>Schedule / deadline</td></tr>
+<tr><td><kbd>C-c C-c</kbd></td><td>Context action (tags, etc.)</td></tr>
+<tr><td><kbd>C-c '</kbd></td><td>Edit src block in native mode</td></tr>
+<tr><td><kbd>C-c C-x C-l</kbd></td><td>Preview LaTeX fragment</td></tr>
+</table>
+<h3>Export &amp; Preview</h3>
+<table class="keys">
+<tr><td><kbd>C-c C-e</kbd></td><td>Export dispatcher</td></tr>
+<tr><td><kbd>C-c C-p</kbd></td><td>Preview in EWW (pandoc --webtex)</td></tr>
+<tr><td><kbd>C-u C-c C-p</kbd></td><td>… save sibling .html</td></tr>
+</table>
+<div class="legend">LaTeX math → dvisvgm. PDFs open in Emacs via pdf-tools. HTML opens in browser.</div>
+</div>
+
+<div class="section">
+<h2>Markdown</h2>
+<table class="keys">
+<tr><td><kbd>C-c C-e</kbd></td><td>Export (pandoc)</td></tr>
+<tr><td><kbd>C-c C-o</kbd></td><td>Follow link at point</td></tr>
+<tr><td><kbd>C-c C-v</kbd></td><td>Preview in EWW (pandoc --webtex)</td></tr>
+<tr><td><kbd>C-u C-c C-v</kbd></td><td>… save sibling .html</td></tr>
+</table>
+<div class="legend">GFM for README.md. visual-line + flyspell enabled. Math support on.</div>
+</div>
+
+<div class="section">
+<h2>Shell &amp; Term</h2>
+<table class="keys">
+<tr><td><kbd>M-x eshell</kbd></td><td>Emacs shell (side window)</td></tr>
+<tr><td><kbd>M-x shell</kbd></td><td>System shell</td></tr>
+<tr><td><kbd>M-x term</kbd></td><td>Full terminal emulator</td></tr>
+<tr><td><kbd>M-!</kbd></td><td>Run shell command</td></tr>
+<tr><td><kbd>M-&amp;</kbd></td><td>Run async shell command</td></tr>
+<tr><td><kbd>M-|</kbd></td><td>Pipe region through command</td></tr>
+</table>
+</div>
+
+<!-- ── Column 3 ────────────────────────────────────── -->
+
+<div class="section">
+<h2>Help System</h2>
+<table class="keys">
+<tr><td><kbd>C-h k</kbd></td><td>Describe key binding</td></tr>
+<tr><td><kbd>C-h f</kbd></td><td>Describe function</td></tr>
+<tr><td><kbd>C-h v</kbd></td><td>Describe variable</td></tr>
+<tr><td><kbd>C-h m</kbd></td><td>Describe current modes</td></tr>
+<tr><td><kbd>C-h a</kbd></td><td>Apropos (search commands)</td></tr>
+<tr><td><kbd>C-h i</kbd></td><td>Info manual</td></tr>
+<tr><td><kbd>C-h b</kbd></td><td>Show all key bindings</td></tr>
+<tr><td><kbd>C-h ?</kbd></td><td>Help for help</td></tr>
+</table>
+<div class="legend"><code>which-key</code> shows available keys after prefix (C-c, C-x, …) with a short delay.</div>
+</div>
+
+<div class="section">
+<h2>Registers &amp; Bookmarks</h2>
+<table class="keys">
+<tr><td><kbd>C-x r SPC <i>r</i></kbd></td><td>Save point to register <i>r</i></td></tr>
+<tr><td><kbd>C-x r j <i>r</i></kbd></td><td>Jump to register <i>r</i></td></tr>
+<tr><td><kbd>C-x r s <i>r</i></kbd></td><td>Save region to register <i>r</i></td></tr>
+<tr><td><kbd>C-x r i <i>r</i></kbd></td><td>Insert register <i>r</i></td></tr>
+<tr><td><kbd>C-x r m</kbd></td><td>Set bookmark</td></tr>
+<tr><td><kbd>C-x r b</kbd></td><td>Jump to bookmark</td></tr>
+<tr><td><kbd>C-x r l</kbd></td><td>List bookmarks</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Rectangles</h2>
+<table class="keys">
+<tr><td><kbd>C-x SPC</kbd></td><td>Rectangle mark mode</td></tr>
+<tr><td><kbd>C-x r k</kbd></td><td>Kill rectangle</td></tr>
+<tr><td><kbd>C-x r y</kbd></td><td>Yank rectangle</td></tr>
+<tr><td><kbd>C-x r o</kbd></td><td>Open (insert space) rectangle</td></tr>
+<tr><td><kbd>C-x r t</kbd></td><td>Replace rectangle with string</td></tr>
+<tr><td><kbd>C-x r N</kbd></td><td>Number lines in rectangle</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Macros</h2>
+<table class="keys">
+<tr><td><kbd>F3</kbd></td><td>Start recording macro</td></tr>
+<tr><td><kbd>F4</kbd></td><td>Stop recording / play macro</td></tr>
+<tr><td><kbd>C-u <i>n</i> F4</kbd></td><td>Play macro <i>n</i> times</td></tr>
+<tr><td><kbd>C-x C-k n</kbd></td><td>Name last macro</td></tr>
+<tr><td><kbd>C-x C-k b</kbd></td><td>Bind macro to key</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Robot Framework</h2>
+<table class="keys">
+<tr><td colspan="2"><i>robot-mode + robotframework-ls via Eglot</i></td></tr>
+<tr><td colspan="2"><i>All Eglot C-c l bindings apply</i></td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>Display Buffer Layout</h2>
+<table class="keys">
+<tr><td><b>Bottom</b></td><td>*shell*, *compilation*, *grep*, *xref*, *rg*, *rustic-compilation*, *cargo-*</td></tr>
+<tr><td><b>Right</b></td><td>*Help*, *Backtrace*, *eldoc*, *cargo-expand*, *Warnings*</td></tr>
+</table>
+<div class="legend">Smart splitting: prefers horizontal if window is 2× wider than tall. Splits always focus the new window.</div>
+</div>
+
+<div class="section">
+<h2>Environment &amp; Settings</h2>
+<table class="keys">
+<tr><td><b>Theme</b></td><td>Monokai Pro</td></tr>
+<tr><td><b>Font</b></td><td>Iosevka Nerd Font (14pt mac/12pt linux)</td></tr>
+<tr><td><b>Ligatures</b></td><td>→ => == != >= <= :: ...</td></tr>
+<tr><td><b>envrc</b></td><td>Auto-load direnv .envrc</td></tr>
+<tr><td><b>Clipboard</b></td><td>OSC 52 (works in tmux/SSH)</td></tr>
+<tr><td><b>KKP</b></td><td>Kitty keyboard protocol</td></tr>
+<tr><td><b>Backups</b></td><td>Disabled (no .# / ~ / #auto#)</td></tr>
+<tr><td><b>Scroll</b></td><td>5-line margin, conservative</td></tr>
+<tr><td><b>GC</b></td><td>1GB startup → 16MB → idle/unfocus</td></tr>
+</table>
+</div>
+
+<div class="section" style="break-inside: avoid;">
+<h2>Notation</h2>
+<table class="keys">
+<tr><td><kbd>C-</kbd></td><td>Hold Control</td></tr>
+<tr><td><kbd>M-</kbd></td><td>Hold Meta (Alt/Option)</td></tr>
+<tr><td><kbd>S-</kbd></td><td>Hold Shift</td></tr>
+<tr><td><kbd>C-c</kbd></td><td>Control+c (prefix for custom keys)</td></tr>
+<tr><td><kbd>C-x</kbd></td><td>Control+x (prefix for built-in)</td></tr>
+<tr><td><kbd>RET</kbd></td><td>Return / Enter</td></tr>
+<tr><td><kbd>SPC</kbd></td><td>Space</td></tr>
+<tr><td><kbd>DEL / ⌫</kbd></td><td>Backspace</td></tr>
+</table>
+<div class="legend" style="text-align: center; margin-top: 4pt; border-top: 0.5pt solid #999; padding-top: 3pt;">
+  Generated from dotfiles · November 2026 · <code>emacs-cheatsheet.html</code>
+</div>
+</div>
+
+</div><!-- end sheet side 2 -->
+
+</body>
+</html>
